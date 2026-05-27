@@ -24,13 +24,21 @@
   },
   "devDependencies": {
     "@types/react": "~19.2.2",
+    "expo-doctor": "~1.19.8",
     "typescript": "~6.0.3"
+  },
+  "engines": {
+    "node": ">=22 <23",
+    "npm": ">=10"
   },
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "typecheck": "tsc --noEmit",
+    "doctor": "expo-doctor",
+    "ci": "npm run typecheck && npm run doctor"
   },
   "private": true
 }

@@ -1,0 +1,43 @@
+# Ensures package-lock.json stays in sync with package.json on every PR.
+
+name: Lockfile
+
+on:
+  pull_request:
+    branches:
+      - main
+      - master
+    paths:
+      - package.json
+      - package-lock.json
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lockfile:
+    name: Verify lockfile
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install from lockfile
+        run: npm ci
+
+      - name: Detect lockfile drift
+        run: |
+          npm install --package-lock-only --ignore-scripts
+          if ! git diff --exit-code -- package-lock.json; then
+            echo "::error::package-lock.json is out of sync with package.json. Run 'npm install' locally and commit the updated lockfile."
+            exit 1
+          fi
