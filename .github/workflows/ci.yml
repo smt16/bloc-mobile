@@ -24,6 +24,8 @@ permissions:
 env:
   CI: true
   EXPO_NO_TELEMETRY: 1
+  # actions/checkout@v4 and setup-node@v4 still run on Node 20 until upgraded.
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 defaults:
   run:
