@@ -1,139 +1,307 @@
+import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { useAuth } from '../../src/auth/AuthContext';
+import { Avatar } from '../../src/components/Avatar';
 import { Card } from '../../src/components/Card';
+import { GradeChip } from '../../src/components/GradeChip';
+import { Icon, type IconName } from '../../src/components/Icon';
+import { IconButton } from '../../src/components/IconButton';
+import { ProgressBar } from '../../src/components/ProgressBar';
+import { ReactionBar } from '../../src/components/ReactionBar';
 import { Screen } from '../../src/components/Screen';
-import { colors, spacing, typography } from '../../src/theme';
+import { SectionHeader } from '../../src/components/SectionHeader';
+import {
+  feed,
+  profileStats,
+  stories,
+  type FeedItem,
+  type FeedKind,
+} from '../../src/data/mock';
+import { colors, gradients, radius, spacing, typography } from '../../src/theme';
 
-type FeedItem = {
-  id: string;
-  climber: string;
-  action: string;
-  detail: string;
-  gym: string;
-  timeAgo: string;
-  accent?: boolean;
+const KIND_META: Record<FeedKind, { icon: IconName; label: string; color: string }> = {
+  send: { icon: 'trophy', label: 'Sent', color: colors.accent },
+  session: { icon: 'time', label: 'Session', color: colors.cyan },
+  milestone: { icon: 'flame', label: 'Milestone', color: colors.purple },
+  project: { icon: 'construct', label: 'Projecting', color: colors.warning },
 };
-
-const FEED: FeedItem[] = [
-  {
-    id: '1',
-    climber: 'Maya R.',
-    action: 'sent her first V6',
-    detail: '“Tundra” · Crimpy slab · 12 sessions to send',
-    gym: 'Brooklyn Boulders',
-    timeAgo: '2h',
-    accent: true,
-  },
-  {
-    id: '2',
-    climber: 'Diego A.',
-    action: 'logged a session',
-    detail: '8 problems · V2 → V4 · 1h 45m',
-    gym: 'Movement Denver',
-    timeAgo: '5h',
-  },
-  {
-    id: '3',
-    climber: 'Yuki T.',
-    action: 'flashed a project',
-    detail: '“Static Memory” · V5 · powerful overhang',
-    gym: 'B-Pump Ogikubo',
-    timeAgo: '1d',
-  },
-];
 
 export default function FeedScreen() {
   const { user } = useAuth();
+  const router = useRouter();
   const firstName =
     typeof user?.name === 'string'
       ? user.name.split(' ')[0]
-      : user?.nickname ?? 'climber';
+      : (user?.nickname as string) ?? 'climber';
 
   return (
-    <Screen scroll>
-      <View style={styles.header}>
-        <Text style={styles.eyebrow}>Today</Text>
-        <Text style={styles.greeting}>Hey {firstName} 👋</Text>
-        <Text style={styles.subtitle}>
-          Here&apos;s what your tribe is sending right now.
-        </Text>
+    <Screen scroll padded={false} edges={['top']}>
+      <View style={styles.headerRow}>
+        <View>
+          <Text style={styles.eyebrow}>SATURDAY · JUL 4</Text>
+          <Text style={styles.greeting}>Hey {firstName} 👋</Text>
+        </View>
+        <View style={styles.headerActions}>
+          <IconButton name="calendar-outline" onPress={() => router.push('/sessions')} />
+          <IconButton name="notifications-outline" badge />
+        </View>
       </View>
 
-      <View style={styles.statsRow}>
-        <Stat label="Active streak" value="6" unit="days" />
-        <Stat label="Hardest send" value="V5" unit="this week" highlight />
-        <Stat label="Sessions" value="14" unit="this month" />
-      </View>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.stories}
+      >
+        {stories.map((c, i) => (
+          <Pressable key={c.id} style={styles.story}>
+            <Avatar
+              initials={c.initials}
+              color={c.avatarColor}
+              size={58}
+              gradientRing={i !== 0}
+              ring={i === 0}
+            />
+            {i === 0 ? (
+              <View style={styles.storyAdd}>
+                <Icon name="add" size={13} color={colors.bg} />
+              </View>
+            ) : null}
+            <Text style={styles.storyName} numberOfLines={1}>
+              {i === 0 ? 'Your story' : c.name.split(' ')[0]}
+            </Text>
+          </Pressable>
+        ))}
+      </ScrollView>
 
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Tribe feed</Text>
-          <Text style={styles.sectionAction}>See all</Text>
+      <View style={styles.padded}>
+        <Pressable onPress={() => router.push('/sessions')}>
+          <LinearGradient
+            colors={gradients.brand}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.hero}
+          >
+            <View style={styles.heroTop}>
+              <View style={styles.heroStreak}>
+                <Icon name="flame" size={18} color={colors.bg} />
+                <Text style={styles.heroStreakText}>{profileStats.streak}-day streak</Text>
+              </View>
+              <Icon name="chevron-forward" size={18} color="rgba(11,11,15,0.6)" />
+            </View>
+            <Text style={styles.heroTitle}>3 of 4 sessions this week</Text>
+            <Text style={styles.heroSub}>One more to hit your weekly goal.</Text>
+            <ProgressBar
+              progress={0.75}
+              height={10}
+              colorsOverride={['#0B0B0F', 'rgba(11,11,15,0.7)']}
+              track="rgba(11,11,15,0.25)"
+              style={styles.heroBar}
+            />
+          </LinearGradient>
+        </Pressable>
+
+        <View style={styles.statsRow}>
+          <Stat icon="trophy" label="Hardest" value="V5" tone={colors.accent} />
+          <Stat icon="flash" label="Flashes" value="15" tone={colors.cyan} />
+          <Stat icon="albums" label="Sends" value={`${profileStats.sends}`} tone={colors.purple} />
         </View>
 
-        <View style={styles.feed}>
-          {FEED.map((item) => (
-            <FeedCard key={item.id} item={item} />
-          ))}
+        <View style={styles.section}>
+          <SectionHeader title="Tribe feed" action="Filters" />
+          <View style={styles.feed}>
+            {feed.map((item) => (
+              <FeedCard
+                key={item.id}
+                item={item}
+                onOpenRoute={(id) => router.push(`/route/${id}`)}
+              />
+            ))}
+          </View>
         </View>
       </View>
     </Screen>
   );
 }
 
-const Stat: React.FC<{
-  label: string;
-  value: string;
-  unit: string;
-  highlight?: boolean;
-}> = ({ label, value, unit, highlight }) => (
-  <Card style={[styles.stat, highlight && styles.statHighlight]} padded>
-    <Text style={[styles.statValue, highlight && styles.statValueHighlight]}>
-      {value}
-    </Text>
+const Stat: React.FC<{ icon: IconName; label: string; value: string; tone: string }> = ({
+  icon,
+  label,
+  value,
+  tone,
+}) => (
+  <Card style={styles.stat} padded>
+    <View style={[styles.statIcon, { backgroundColor: `${tone}22` }]}>
+      <Icon name={icon} size={16} color={tone} />
+    </View>
+    <Text style={styles.statValue}>{value}</Text>
     <Text style={styles.statLabel}>{label}</Text>
-    <Text style={styles.statUnit}>{unit}</Text>
   </Card>
 );
 
-const FeedCard: React.FC<{ item: FeedItem }> = ({ item }) => (
-  <Card style={styles.feedCard}>
-    <View style={styles.feedRow}>
-      <View style={[styles.avatar, item.accent && styles.avatarAccent]}>
-        <Text style={styles.avatarText}>{item.climber.charAt(0)}</Text>
+const FeedCard: React.FC<{ item: FeedItem; onOpenRoute: (id: string) => void }> = ({
+  item,
+  onOpenRoute,
+}) => {
+  const meta = KIND_META[item.kind];
+  return (
+    <Card style={styles.feedCard} padded={false}>
+      <View style={styles.feedHeader}>
+        <Avatar initials={item.climber.initials} color={item.climber.avatarColor} size={44} />
+        <View style={styles.feedHeaderCopy}>
+          <Text style={styles.feedLine} numberOfLines={1}>
+            <Text style={styles.feedClimber}>{item.climber.name}</Text>
+            <Text style={styles.feedAction}> {item.headline}</Text>
+          </Text>
+          <View style={styles.feedMetaRow}>
+            <Icon name="location" size={12} color={colors.textSubtle} />
+            <Text style={styles.feedMeta}>
+              {item.gym} · {item.timeAgo}
+            </Text>
+          </View>
+        </View>
+        <View style={[styles.kindPill, { backgroundColor: `${meta.color}1F` }]}>
+          <Icon name={meta.icon} size={12} color={meta.color} />
+          <Text style={[styles.kindPillText, { color: meta.color }]}>{meta.label}</Text>
+        </View>
       </View>
-      <View style={styles.feedBody}>
-        <Text style={styles.feedLine}>
-          <Text style={styles.feedClimber}>{item.climber}</Text>
-          <Text style={styles.feedAction}> {item.action}</Text>
-        </Text>
-        <Text style={styles.feedDetail}>{item.detail}</Text>
-        <Text style={styles.feedMeta}>
-          {item.gym} · {item.timeAgo}
-        </Text>
+
+      {item.routeName ? (
+        <Pressable
+          style={styles.routeChipRow}
+          onPress={() => onOpenRoute('r1')}
+        >
+          {item.grade ? <GradeChip grade={item.grade} /> : null}
+          <Text style={styles.routeName}>{item.routeName}</Text>
+          {item.attempts ? (
+            <Text style={styles.routeAttempts}>· {item.attempts} tries</Text>
+          ) : null}
+          <View style={{ flex: 1 }} />
+          <Icon name="chevron-forward" size={16} color={colors.textSubtle} />
+        </Pressable>
+      ) : null}
+
+      {item.note ? <Text style={styles.feedNote}>{item.note}</Text> : null}
+
+      {item.media ? (
+        <LinearGradient
+          colors={[`${item.climber.avatarColor}55`, colors.surfaceMuted]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.media}
+        >
+          <View style={styles.playButton}>
+            <Icon name="play" size={22} color={colors.text} />
+          </View>
+          <Text style={styles.mediaLabel}>Send clip · 0:14</Text>
+        </LinearGradient>
+      ) : null}
+
+      <View style={styles.feedFooter}>
+        <ReactionBar
+          reactions={item.reactions}
+          comments={item.comments}
+          reactedByMe={item.reactedByMe}
+        />
       </View>
-    </View>
-  </Card>
-);
+    </Card>
+  );
+};
 
 const styles = StyleSheet.create({
-  header: {
-    gap: spacing.xs,
-    marginBottom: spacing['2xl'],
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.sm,
+    marginBottom: spacing.lg,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    gap: spacing.sm,
   },
   eyebrow: {
     ...typography.overline,
     color: colors.accent,
+    marginBottom: 2,
   },
   greeting: {
     ...typography.h1,
     color: colors.text,
   },
-  subtitle: {
-    ...typography.body,
+  padded: {
+    paddingHorizontal: spacing.xl,
+  },
+  stories: {
+    paddingHorizontal: spacing.xl,
+    gap: spacing.lg,
+    paddingBottom: spacing.xl,
+  },
+  story: {
+    alignItems: 'center',
+    width: 66,
+    gap: 6,
+  },
+  storyAdd: {
+    position: 'absolute',
+    top: 40,
+    right: 6,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: colors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: colors.bg,
+  },
+  storyName: {
+    ...typography.caption,
+    fontSize: 11,
     color: colors.textMuted,
+    maxWidth: 66,
+  },
+  hero: {
+    borderRadius: radius.xl,
+    padding: spacing.xl,
+    marginBottom: spacing.lg,
+  },
+  heroTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.lg,
+  },
+  heroStreak: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(11,11,15,0.18)',
+    paddingHorizontal: spacing.md,
+    paddingVertical: 6,
+    borderRadius: radius.pill,
+  },
+  heroStreakText: {
+    ...typography.caption,
+    color: colors.bg,
+    fontWeight: '800',
+  },
+  heroTitle: {
+    ...typography.h1,
+    color: colors.bg,
+    fontSize: 24,
+  },
+  heroSub: {
+    ...typography.body,
+    color: 'rgba(11,11,15,0.7)',
+    marginTop: 2,
+    marginBottom: spacing.lg,
+  },
+  heroBar: {
+    marginTop: spacing.xs,
   },
   statsRow: {
     flexDirection: 'row',
@@ -142,89 +310,119 @@ const styles = StyleSheet.create({
   },
   stat: {
     flex: 1,
-    gap: spacing.xs,
+    gap: 6,
   },
-  statHighlight: {
-    backgroundColor: colors.accentMuted,
-    borderColor: 'transparent',
+  statIcon: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 2,
   },
   statValue: {
-    ...typography.h1,
+    ...typography.h2,
     color: colors.text,
-  },
-  statValueHighlight: {
-    color: colors.accent,
   },
   statLabel: {
     ...typography.caption,
     color: colors.textMuted,
   },
-  statUnit: {
-    ...typography.caption,
-    color: colors.textSubtle,
-    fontSize: 11,
-  },
   section: {
     gap: spacing.lg,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    justifyContent: 'space-between',
-  },
-  sectionTitle: {
-    ...typography.h2,
-    color: colors.text,
-  },
-  sectionAction: {
-    ...typography.caption,
-    color: colors.accent,
+    paddingBottom: spacing['3xl'],
   },
   feed: {
-    gap: spacing.md,
+    gap: spacing.lg,
   },
   feedCard: {
-    paddingVertical: spacing.lg,
-  },
-  feedRow: {
-    flexDirection: 'row',
+    padding: spacing.lg,
     gap: spacing.md,
   },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: colors.surfaceMuted,
+  feedHeader: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: spacing.md,
   },
-  avatarAccent: {
-    backgroundColor: colors.accent,
-  },
-  avatarText: {
-    ...typography.bodyStrong,
-    color: colors.text,
-  },
-  feedBody: {
+  feedHeaderCopy: {
     flex: 1,
-    gap: spacing.xs,
+    gap: 2,
   },
   feedLine: {
     ...typography.body,
   },
   feedClimber: {
     color: colors.text,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   feedAction: {
     color: colors.textMuted,
   },
-  feedDetail: {
-    ...typography.body,
-    color: colors.text,
+  feedMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   feedMeta: {
     ...typography.caption,
     color: colors.textSubtle,
+  },
+  kindPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 5,
+    borderRadius: radius.pill,
+  },
+  kindPillText: {
+    ...typography.caption,
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  routeChipRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.surfaceMuted,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+  },
+  routeName: {
+    ...typography.bodyStrong,
+    color: colors.text,
+  },
+  routeAttempts: {
+    ...typography.caption,
+    color: colors.textMuted,
+  },
+  feedNote: {
+    ...typography.body,
+    color: colors.textMuted,
+    lineHeight: 22,
+  },
+  media: {
+    height: 168,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+  },
+  playButton: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: 'rgba(11,11,15,0.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  mediaLabel: {
+    ...typography.caption,
+    color: colors.text,
+    fontWeight: '600',
+  },
+  feedFooter: {
+    marginTop: spacing.xs,
   },
 });

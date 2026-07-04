@@ -23,8 +23,8 @@ const extra =
   (Constants.expoConfig?.extra as Partial<Auth0Config> | undefined) ?? {};
 
 export const auth0Config: Auth0Config = {
-  domain: extra.domain ?? 'YOUR_AUTH0_DOMAIN',
-  clientId: extra.clientId ?? 'YOUR_AUTH0_CLIENT_ID',
+  domain: extra.domain ?? 'gym-extension.jp.auth0.com',
+  clientId: extra.clientId ?? 'rbOqPyztMJ0KmnyHYemIkNG8tlMv3uTb',
   audience: extra.audience ?? 'https://api.bloc.app',
   scopes: extra.scopes ?? ['openid', 'profile', 'email', 'offline_access'],
 };
