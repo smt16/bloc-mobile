@@ -1,39 +1,72 @@
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
+import { useSessions } from '../src/api/hooks';
+import type { Session } from '../src/api/types';
 import { Card } from '../src/components/Card';
 import { GradeChip } from '../src/components/GradeChip';
 import { Icon } from '../src/components/Icon';
 import { NavHeader } from '../src/components/NavHeader';
 import { Screen } from '../src/components/Screen';
 import { gradeColor, colors, radius, spacing, typography } from '../src/theme';
-import { sessions, type Session } from '../src/data/mock';
+
+const formatDate = (iso: string): string => {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  if (d.toDateString() === new Date().toDateString()) return 'Today';
+  return d.toLocaleDateString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  });
+};
 
 export default function SessionsScreen() {
   const router = useRouter();
+  const { data, isLoading } = useSessions();
+  const summary = data?.summary;
+  const sessions = data?.sessions ?? [];
 
   return (
     <Screen scroll edges={['top']}>
       <NavHeader title="Your logbook" />
 
       <Card style={styles.summary}>
-        <SummaryCell label="This week" value="3" unit="sessions" />
+        <SummaryCell
+          label="This week"
+          value={`${summary?.sessionsThisWeek ?? 0}`}
+          unit="sessions"
+        />
         <View style={styles.summaryDivider} />
-        <SummaryCell label="On the wall" value="4.2h" unit="this week" />
+        <SummaryCell
+          label="On the wall"
+          value={`${summary?.hoursThisWeek ?? 0}h`}
+          unit="this week"
+        />
         <View style={styles.summaryDivider} />
-        <SummaryCell label="Flash rate" value="38%" unit="last 10" />
+        <SummaryCell
+          label="Flash rate"
+          value={`${summary?.flashRate ?? 0}%`}
+          unit="last 10"
+        />
       </Card>
 
-      <View style={styles.list}>
-        {sessions.map((session) => (
-          <SessionCard
-            key={session.id}
-            session={session}
-            onPress={() => router.push('/log')}
-          />
-        ))}
-      </View>
+      {isLoading ? (
+        <ActivityIndicator color={colors.accent} style={styles.loader} />
+      ) : sessions.length === 0 ? (
+        <Text style={styles.empty}>No sessions logged yet.</Text>
+      ) : (
+        <View style={styles.list}>
+          {sessions.map((session) => (
+            <SessionCard
+              key={session.id}
+              session={session}
+              onPress={() => router.push('/log')}
+            />
+          ))}
+        </View>
+      )}
       <View style={styles.bottomSpace} />
     </Screen>
   );
@@ -59,14 +92,14 @@ const SessionCard: React.FC<{ session: Session; onPress: () => void }> = ({
     <Card style={styles.card}>
       <View style={styles.cardHeader}>
         <View>
-          <Text style={styles.date}>{session.date}</Text>
-          <Text style={styles.gym}>{session.gym}</Text>
+          <Text style={styles.date}>{formatDate(session.date)}</Text>
+          <Text style={styles.gym}>{session.gym ?? 'Gym'}</Text>
         </View>
-        <GradeChip grade={session.hardest} size="lg" />
+        <GradeChip grade={session.hardest ?? '—'} size="lg" />
       </View>
 
       <View style={styles.metaRow}>
-        <Meta icon="time-outline" text={`${session.durationMins} min`} />
+        <Meta icon="time-outline" text={`${session.durationMins ?? 0} min`} />
         <Meta icon="checkmark-circle-outline" text={`${session.sends} sends`} />
         <Meta icon="flash-outline" text={`${session.flashes} flashes`} />
       </View>
@@ -144,6 +177,15 @@ const styles = StyleSheet.create({
   },
   list: {
     gap: spacing.md,
+  },
+  loader: {
+    marginTop: spacing['2xl'],
+  },
+  empty: {
+    ...typography.body,
+    color: colors.textMuted,
+    textAlign: 'center',
+    marginTop: spacing['2xl'],
   },
   card: {
     gap: spacing.md,

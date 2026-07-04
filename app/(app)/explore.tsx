@@ -10,6 +10,13 @@ import {
   View,
 } from 'react-native';
 
+import {
+  useClimbers,
+  useFollowClimber,
+  useGyms,
+  useRoutes,
+} from '../../src/api/hooks';
+import type { RouteSummary } from '../../src/api/types';
 import { Avatar } from '../../src/components/Avatar';
 import { Card } from '../../src/components/Card';
 import { Chip } from '../../src/components/Chip';
@@ -17,7 +24,6 @@ import { GradeChip } from '../../src/components/GradeChip';
 import { Icon } from '../../src/components/Icon';
 import { Screen } from '../../src/components/Screen';
 import { SectionHeader } from '../../src/components/SectionHeader';
-import { climbers, gyms, routes, type Route } from '../../src/data/mock';
 import { colors, radius, spacing, typography } from '../../src/theme';
 
 const FILTERS = ['All', 'Routes', 'Gyms', 'Climbers', 'Nearby'];
@@ -25,6 +31,10 @@ const FILTERS = ['All', 'Routes', 'Gyms', 'Climbers', 'Nearby'];
 export default function ExploreScreen() {
   const router = useRouter();
   const [filter, setFilter] = useState('All');
+  const { data: gyms } = useGyms();
+  const { data: routes } = useRoutes();
+  const { data: climbers } = useClimbers();
+  const follow = useFollowClimber();
 
   return (
     <Screen scroll padded={false} edges={['top']}>
@@ -61,15 +71,20 @@ export default function ExploreScreen() {
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.gymRow}
       >
-        {gyms.map((gym) => (
+        {(gyms ?? []).map((gym) => (
           <LinearGradient
             key={gym.id}
-            colors={[`${gym.accent}40`, colors.surface]}
+            colors={[`${gym.accentColor ?? colors.accent}40`, colors.surface]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.gymCard}
           >
-            <View style={[styles.gymBadge, { backgroundColor: gym.accent }]}>
+            <View
+              style={[
+                styles.gymBadge,
+                { backgroundColor: gym.accentColor ?? colors.accent },
+              ]}
+            >
               <Icon name="business" size={18} color={colors.bg} />
             </View>
             <Text style={styles.gymName} numberOfLines={1}>
@@ -96,7 +111,7 @@ export default function ExploreScreen() {
         <View style={styles.sectionSpacer} />
         <SectionHeader title="Trending routes" action="Filters" />
         <View style={styles.routeList}>
-          {routes.map((route) => (
+          {(routes ?? []).map((route) => (
             <RouteRow
               key={route.id}
               route={route}
@@ -108,18 +123,35 @@ export default function ExploreScreen() {
         <View style={styles.sectionSpacer} />
         <SectionHeader title="Climbers to follow" action="See all" />
         <View style={styles.climberList}>
-          {climbers.slice(0, 4).map((c) => (
+          {(climbers ?? []).slice(0, 8).map((c) => (
             <Card key={c.id} style={styles.climberRow}>
-              <Avatar initials={c.initials} color={c.avatarColor} size={46} />
+              <Avatar
+                initials={c.initials ?? '?'}
+                color={c.avatarColor ?? colors.surfaceMuted}
+                size={46}
+              />
               <View style={styles.climberCopy}>
                 <Text style={styles.climberName}>{c.name}</Text>
                 <Text style={styles.climberMeta} numberOfLines={1}>
-                  {c.handle} · {c.homeGym}
+                  {c.handle ? `@${c.handle}` : '@climber'}
+                  {c.homeGym ? ` · ${c.homeGym}` : ''}
                 </Text>
               </View>
-              <GradeChip grade={c.topGrade} size="sm" />
-              <Pressable style={styles.followBtn}>
-                <Text style={styles.followText}>Follow</Text>
+              {c.topGrade ? <GradeChip grade={c.topGrade} size="sm" /> : null}
+              <Pressable
+                style={[styles.followBtn, c.isFollowing && styles.followingBtn]}
+                onPress={() =>
+                  follow.mutate({ id: c.id, follow: !c.isFollowing })
+                }
+              >
+                <Text
+                  style={[
+                    styles.followText,
+                    c.isFollowing && styles.followingText,
+                  ]}
+                >
+                  {c.isFollowing ? 'Following' : 'Follow'}
+                </Text>
               </Pressable>
             </Card>
           ))}
@@ -129,10 +161,15 @@ export default function ExploreScreen() {
   );
 }
 
-const RouteRow: React.FC<{ route: Route; onPress: () => void }> = ({ route, onPress }) => (
+const RouteRow: React.FC<{ route: RouteSummary; onPress: () => void }> = ({
+  route,
+  onPress,
+}) => (
   <Pressable onPress={onPress}>
     <Card style={styles.routeCard} padded={false}>
-      <View style={[styles.routeSwatch, { backgroundColor: route.color }]} />
+      <View
+        style={[styles.routeSwatch, { backgroundColor: route.color ?? colors.accent }]}
+      />
       <View style={styles.routeBody}>
         <View style={styles.routeTop}>
           <Text style={styles.routeName}>{route.name}</Text>
@@ -334,5 +371,11 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: colors.accent,
     fontWeight: '700',
+  },
+  followingBtn: {
+    backgroundColor: colors.surfaceMuted,
+  },
+  followingText: {
+    color: colors.textMuted,
   },
 });

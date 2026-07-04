@@ -3,6 +3,8 @@ import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, StyleSheet, Text, View } from 'react-native';
 
+import { useProfile } from '../../src/api/hooks';
+import type { Achievement, Milestone } from '../../src/api/types';
 import { useAuth } from '../../src/auth/AuthContext';
 import { Avatar } from '../../src/components/Avatar';
 import { Button } from '../../src/components/Button';
@@ -11,14 +13,6 @@ import { Icon, type IconName } from '../../src/components/Icon';
 import { IconButton } from '../../src/components/IconButton';
 import { Screen } from '../../src/components/Screen';
 import { SectionHeader } from '../../src/components/SectionHeader';
-import {
-  achievements,
-  gradePyramid,
-  profileStats,
-  timeline,
-  type Achievement,
-  type Milestone,
-} from '../../src/data/mock';
 import {
   colors,
   gradeColor,
@@ -54,15 +48,36 @@ export default function ProfileScreen() {
     }
   };
 
+  const { data: profile } = useProfile();
+
   const displayName =
+    profile?.name ||
     (typeof user?.name === 'string' && user.name) ||
     (typeof user?.nickname === 'string' && user.nickname) ||
     'Bloc climber';
-  const email = typeof user?.email === 'string' ? user.email : undefined;
-  const picture = typeof user?.picture === 'string' ? user.picture : undefined;
+  const email =
+    profile?.email ??
+    (typeof user?.email === 'string' ? user.email : undefined);
+  const picture =
+    profile?.pictureUrl ??
+    (typeof user?.picture === 'string' ? user.picture : undefined);
   const initial = displayName.charAt(0).toUpperCase();
 
-  const maxSends = Math.max(...gradePyramid.map((g) => g.sends));
+  const profileStats = profile?.stats ?? {
+    sends: 0,
+    flashes: 0,
+    sessions: 0,
+    crews: 0,
+    streak: 0,
+    hardest: null,
+  };
+  const gradePyramid = profile?.gradePyramid ?? [];
+  const timeline = profile?.timeline ?? [];
+  const achievements = profile?.achievements ?? [];
+  const homeGymName = profile?.homeGym?.name ?? 'No home gym yet';
+  const peakGrade = profileStats.hardest ?? profile?.topGrade ?? '—';
+
+  const maxSends = Math.max(1, ...gradePyramid.map((g) => g.sends));
 
   return (
     <Screen scroll padded={false} edges={['top']}>
@@ -86,12 +101,12 @@ export default function ProfileScreen() {
         />
         <Text style={styles.name}>{displayName}</Text>
         <Text style={styles.handle}>
-          {email ?? '@climber'} · {'The Cliffs LIC'}
+          {email ?? '@climber'} · {homeGymName}
         </Text>
         <View style={styles.tagRow}>
           <View style={styles.metaTag}>
             <Icon name="trending-up" size={13} color={colors.accent} />
-            <Text style={styles.metaTagText}>Peak V5</Text>
+            <Text style={styles.metaTagText}>Peak {peakGrade}</Text>
           </View>
           <View style={styles.metaTag}>
             <Icon name="footsteps" size={13} color={colors.cyan} />
@@ -199,7 +214,7 @@ const TimelineRow: React.FC<{ milestone: Milestone; last: boolean }> = ({
     <View style={styles.tlRow}>
       <View style={styles.tlGutter}>
         <View style={[styles.tlNode, { backgroundColor: `${tone}26`, borderColor: tone }]}>
-          <Icon name={milestone.icon as IconName} size={16} color={tone} />
+          <Icon name={(milestone.icon ?? 'trophy') as IconName} size={16} color={tone} />
         </View>
         {!last ? <View style={styles.tlLine} /> : null}
       </View>
@@ -225,7 +240,11 @@ const BadgeTile: React.FC<{ achievement: Achievement }> = ({ achievement }) => {
         ]}
       >
         <Icon
-          name={achievement.earned ? (achievement.icon as IconName) : 'lock-closed'}
+          name={
+            achievement.earned
+              ? ((achievement.icon ?? 'ribbon') as IconName)
+              : 'lock-closed'
+          }
           size={20}
           color={achievement.earned ? tone : colors.textSubtle}
         />

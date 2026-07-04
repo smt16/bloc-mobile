@@ -1,9 +1,17 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { useRoute } from '../../src/api/hooks';
 import { Avatar } from '../../src/components/Avatar';
 import { AvatarStack } from '../../src/components/AvatarStack';
 import { Button } from '../../src/components/Button';
@@ -11,18 +19,26 @@ import { Card } from '../../src/components/Card';
 import { GradeChip } from '../../src/components/GradeChip';
 import { Icon, type IconName } from '../../src/components/Icon';
 import { IconButton } from '../../src/components/IconButton';
-import { climbers, routes } from '../../src/data/mock';
 import { colors, radius, spacing, typography } from '../../src/theme';
-
-const COMMENTS = [
-  { id: 'k1', climber: climbers[2], text: 'Heel hook on the left volume is the move 🔑', time: '3h' },
-  { id: 'k2', climber: climbers[3], text: 'Sooo crimpy. Skin destroyer.', time: '1d' },
-];
 
 export default function RouteDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const route = routes.find((r) => r.id === id) ?? routes[0];
+  const { data: route, isLoading } = useRoute(id);
+
+  if (isLoading || !route) {
+    return (
+      <SafeAreaView style={[styles.safe, styles.center]} edges={['top', 'bottom']}>
+        {isLoading ? (
+          <ActivityIndicator color={colors.accent} />
+        ) : (
+          <Text style={styles.notFound}>Route not found.</Text>
+        )}
+      </SafeAreaView>
+    );
+  }
+
+  const logged = route.status === 'sent' || route.status === 'flashed';
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
@@ -65,12 +81,18 @@ export default function RouteDetail() {
           </View>
 
           <Card style={styles.setterCard}>
-            <Avatar initials="NK" color={route.color} size={40} />
+            <Avatar
+              initials={route.setterInitials ?? '?'}
+              color={route.color ?? colors.accent}
+              size={40}
+            />
             <View style={styles.setterCopy}>
               <Text style={styles.setterLabel}>Set by</Text>
-              <Text style={styles.setterName}>{route.setter}</Text>
+              <Text style={styles.setterName}>{route.setter ?? 'Unknown'}</Text>
             </View>
-            <Text style={styles.setterNote}>“Trust your feet on the top-out.”</Text>
+            {route.setterNote ? (
+              <Text style={styles.setterNote}>“{route.setterNote}”</Text>
+            ) : null}
           </Card>
 
           <View style={styles.section}>
@@ -80,10 +102,10 @@ export default function RouteDetail() {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.betaRow}
             >
-              {climbers.slice(0, 3).map((c) => (
+              {route.recentSenders.slice(0, 3).map((c) => (
                 <View key={c.id} style={styles.betaCard}>
                   <LinearGradient
-                    colors={[`${c.avatarColor}66`, colors.surfaceMuted]}
+                    colors={[`${c.avatarColor ?? colors.accent}66`, colors.surfaceMuted]}
                     style={styles.betaThumb}
                   >
                     <View style={styles.betaPlay}>
@@ -91,7 +113,11 @@ export default function RouteDetail() {
                     </View>
                   </LinearGradient>
                   <View style={styles.betaMeta}>
-                    <Avatar initials={c.initials} color={c.avatarColor} size={22} />
+                    <Avatar
+                      initials={c.initials ?? '?'}
+                      color={c.avatarColor ?? colors.surfaceMuted}
+                      size={22}
+                    />
                     <Text style={styles.betaName} numberOfLines={1}>
                       {c.name.split(' ')[0]}
                     </Text>
@@ -105,9 +131,11 @@ export default function RouteDetail() {
             <View style={styles.sendersHeader}>
               <Text style={styles.sectionTitle}>Recent senders</Text>
               <AvatarStack
-                colors={climbers.map((c) => c.avatarColor)}
+                colors={route.recentSenders.map(
+                  (c) => c.avatarColor ?? colors.surfaceMuted,
+                )}
                 size={30}
-                extra={route.sends - 4}
+                extra={Math.max(route.sends - route.recentSenders.length, 0)}
               />
             </View>
           </View>
@@ -115,18 +143,28 @@ export default function RouteDetail() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Comments</Text>
             <View style={styles.comments}>
-              {COMMENTS.map((c) => (
-                <View key={c.id} style={styles.comment}>
-                  <Avatar initials={c.climber.initials} color={c.climber.avatarColor} size={36} />
-                  <View style={styles.commentBubble}>
-                    <View style={styles.commentTop}>
-                      <Text style={styles.commentName}>{c.climber.name}</Text>
-                      <Text style={styles.commentTime}>{c.time}</Text>
+              {route.comments.length === 0 ? (
+                <Text style={styles.commentText}>No beta yet. Be the first!</Text>
+              ) : (
+                route.comments.map((c) => (
+                  <View key={c.id} style={styles.comment}>
+                    <Avatar
+                      initials={c.climber?.initials ?? '?'}
+                      color={c.climber?.avatarColor ?? colors.surfaceMuted}
+                      size={36}
+                    />
+                    <View style={styles.commentBubble}>
+                      <View style={styles.commentTop}>
+                        <Text style={styles.commentName}>
+                          {c.climber?.name ?? 'Climber'}
+                        </Text>
+                        <Text style={styles.commentTime}>{c.timeAgo}</Text>
+                      </View>
+                      <Text style={styles.commentText}>{c.body}</Text>
                     </View>
-                    <Text style={styles.commentText}>{c.text}</Text>
                   </View>
-                </View>
-              ))}
+                ))
+              )}
             </View>
           </View>
         </View>
@@ -134,15 +172,20 @@ export default function RouteDetail() {
 
       <View style={styles.footer}>
         <Button
-          label={route.status === 'sent' ? 'Logged · Sent' : 'Log an attempt'}
+          label={logged ? 'Logged · Sent' : 'Log an attempt'}
           size="lg"
-          variant={route.status === 'sent' ? 'secondary' : 'primary'}
-          onPress={() => router.push('/log')}
+          variant={logged ? 'secondary' : 'primary'}
+          onPress={() =>
+            router.push({
+              pathname: '/log',
+              params: { routeId: route.id, grade: route.grade },
+            })
+          }
           leading={
             <Icon
-              name={(route.status === 'sent' ? 'checkmark-circle' : 'add') as IconName}
+              name={(logged ? 'checkmark-circle' : 'add') as IconName}
               size={20}
-              color={route.status === 'sent' ? colors.success : colors.accentText}
+              color={logged ? colors.success : colors.accentText}
             />
           }
         />
@@ -167,6 +210,14 @@ const styles = StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: colors.bg,
+  },
+  center: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  notFound: {
+    ...typography.body,
+    color: colors.textMuted,
   },
   content: {
     paddingBottom: spacing['2xl'],

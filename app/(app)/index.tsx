@@ -1,8 +1,22 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useMemo } from 'react';
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 
+import {
+  useClimbers,
+  useFeed,
+  useProfile,
+  useReactToFeedItem,
+} from '../../src/api/hooks';
+import type { FeedItem, FeedKind } from '../../src/api/types';
 import { useAuth } from '../../src/auth/AuthContext';
 import { Avatar } from '../../src/components/Avatar';
 import { Card } from '../../src/components/Card';
@@ -13,13 +27,6 @@ import { ProgressBar } from '../../src/components/ProgressBar';
 import { ReactionBar } from '../../src/components/ReactionBar';
 import { Screen } from '../../src/components/Screen';
 import { SectionHeader } from '../../src/components/SectionHeader';
-import {
-  feed,
-  profileStats,
-  stories,
-  type FeedItem,
-  type FeedKind,
-} from '../../src/data/mock';
 import { colors, gradients, radius, spacing, typography } from '../../src/theme';
 
 const KIND_META: Record<FeedKind, { icon: IconName; label: string; color: string }> = {
@@ -32,16 +39,43 @@ const KIND_META: Record<FeedKind, { icon: IconName; label: string; color: string
 export default function FeedScreen() {
   const { user } = useAuth();
   const router = useRouter();
+  const feedQuery = useFeed('global');
+  const profileQuery = useProfile();
+  const climbersQuery = useClimbers();
+  const react = useReactToFeedItem();
+
   const firstName =
     typeof user?.name === 'string'
       ? user.name.split(' ')[0]
       : (user?.nickname as string) ?? 'climber';
 
+  const stats = profileQuery.data?.stats;
+  const weeklyGoal = 4;
+  const sessionsThisWeek = Math.min(stats?.sessions ?? 0, weeklyGoal);
+
+  const stories = useMemo(() => {
+    const me = profileQuery.data
+      ? [
+          {
+            id: profileQuery.data.id,
+            name: profileQuery.data.name,
+            initials: profileQuery.data.initials,
+            avatarColor: profileQuery.data.avatarColor,
+          },
+        ]
+      : [{ id: 'me', name: 'You', initials: 'Y', avatarColor: colors.accent }];
+    return [...me, ...(climbersQuery.data ?? [])];
+  }, [profileQuery.data, climbersQuery.data]);
+
   return (
     <Screen scroll padded={false} edges={['top']}>
       <View style={styles.headerRow}>
         <View>
-          <Text style={styles.eyebrow}>SATURDAY · JUL 4</Text>
+          <Text style={styles.eyebrow}>
+            {new Date()
+              .toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })
+              .toUpperCase()}
+          </Text>
           <Text style={styles.greeting}>Hey {firstName} 👋</Text>
         </View>
         <View style={styles.headerActions}>
@@ -58,8 +92,8 @@ export default function FeedScreen() {
         {stories.map((c, i) => (
           <Pressable key={c.id} style={styles.story}>
             <Avatar
-              initials={c.initials}
-              color={c.avatarColor}
+              initials={c.initials ?? '?'}
+              color={c.avatarColor ?? colors.surfaceMuted}
               size={58}
               gradientRing={i !== 0}
               ring={i === 0}
@@ -87,14 +121,22 @@ export default function FeedScreen() {
             <View style={styles.heroTop}>
               <View style={styles.heroStreak}>
                 <Icon name="flame" size={18} color={colors.bg} />
-                <Text style={styles.heroStreakText}>{profileStats.streak}-day streak</Text>
+                <Text style={styles.heroStreakText}>
+                  {stats?.streak ?? 0}-day streak
+                </Text>
               </View>
               <Icon name="chevron-forward" size={18} color="rgba(11,11,15,0.6)" />
             </View>
-            <Text style={styles.heroTitle}>3 of 4 sessions this week</Text>
-            <Text style={styles.heroSub}>One more to hit your weekly goal.</Text>
+            <Text style={styles.heroTitle}>
+              {sessionsThisWeek} of {weeklyGoal} sessions this week
+            </Text>
+            <Text style={styles.heroSub}>
+              {sessionsThisWeek >= weeklyGoal
+                ? 'Weekly goal smashed. 💥'
+                : 'One more to hit your weekly goal.'}
+            </Text>
             <ProgressBar
-              progress={0.75}
+              progress={sessionsThisWeek / weeklyGoal}
               height={10}
               colorsOverride={['#0B0B0F', 'rgba(11,11,15,0.7)']}
               track="rgba(11,11,15,0.25)"
@@ -104,22 +146,33 @@ export default function FeedScreen() {
         </Pressable>
 
         <View style={styles.statsRow}>
-          <Stat icon="trophy" label="Hardest" value="V5" tone={colors.accent} />
-          <Stat icon="flash" label="Flashes" value="15" tone={colors.cyan} />
-          <Stat icon="albums" label="Sends" value={`${profileStats.sends}`} tone={colors.purple} />
+          <Stat icon="trophy" label="Hardest" value={stats?.hardest ?? '—'} tone={colors.accent} />
+          <Stat icon="flash" label="Flashes" value={`${stats?.flashes ?? 0}`} tone={colors.cyan} />
+          <Stat icon="albums" label="Sends" value={`${stats?.sends ?? 0}`} tone={colors.purple} />
         </View>
 
         <View style={styles.section}>
           <SectionHeader title="Tribe feed" action="Filters" />
-          <View style={styles.feed}>
-            {feed.map((item) => (
-              <FeedCard
-                key={item.id}
-                item={item}
-                onOpenRoute={(id) => router.push(`/route/${id}`)}
-              />
-            ))}
-          </View>
+          {feedQuery.isLoading ? (
+            <ActivityIndicator color={colors.accent} style={styles.loader} />
+          ) : feedQuery.isError ? (
+            <Text style={styles.emptyText}>Couldn’t load the feed. Pull to retry.</Text>
+          ) : (feedQuery.data?.length ?? 0) === 0 ? (
+            <Text style={styles.emptyText}>No activity yet — go log a climb!</Text>
+          ) : (
+            <View style={styles.feed}>
+              {feedQuery.data!.map((item) => (
+                <FeedCard
+                  key={item.id}
+                  item={item}
+                  onOpenRoute={(id) => router.push(`/route/${id}`)}
+                  onReact={(type) =>
+                    react.mutate({ feedItemId: item.id, type })
+                  }
+                />
+              ))}
+            </View>
+          )}
         </View>
       </View>
     </Screen>
@@ -141,18 +194,22 @@ const Stat: React.FC<{ icon: IconName; label: string; value: string; tone: strin
   </Card>
 );
 
-const FeedCard: React.FC<{ item: FeedItem; onOpenRoute: (id: string) => void }> = ({
-  item,
-  onOpenRoute,
-}) => {
+const FeedCard: React.FC<{
+  item: FeedItem;
+  onOpenRoute: (id: string) => void;
+  onReact: (type: import('../../src/api/types').ReactionType) => void;
+}> = ({ item, onOpenRoute, onReact }) => {
   const meta = KIND_META[item.kind];
+  const climberInitials = item.climber?.initials ?? '?';
+  const climberColor = item.climber?.avatarColor ?? colors.surfaceMuted;
+  const climberName = item.climber?.name ?? 'Climber';
   return (
     <Card style={styles.feedCard} padded={false}>
       <View style={styles.feedHeader}>
-        <Avatar initials={item.climber.initials} color={item.climber.avatarColor} size={44} />
+        <Avatar initials={climberInitials} color={climberColor} size={44} />
         <View style={styles.feedHeaderCopy}>
           <Text style={styles.feedLine} numberOfLines={1}>
-            <Text style={styles.feedClimber}>{item.climber.name}</Text>
+            <Text style={styles.feedClimber}>{climberName}</Text>
             <Text style={styles.feedAction}> {item.headline}</Text>
           </Text>
           <View style={styles.feedMetaRow}>
@@ -168,10 +225,10 @@ const FeedCard: React.FC<{ item: FeedItem; onOpenRoute: (id: string) => void }> 
         </View>
       </View>
 
-      {item.routeName ? (
+      {item.routeName && item.routeId ? (
         <Pressable
           style={styles.routeChipRow}
-          onPress={() => onOpenRoute('r1')}
+          onPress={() => onOpenRoute(item.routeId!)}
         >
           {item.grade ? <GradeChip grade={item.grade} /> : null}
           <Text style={styles.routeName}>{item.routeName}</Text>
@@ -187,7 +244,7 @@ const FeedCard: React.FC<{ item: FeedItem; onOpenRoute: (id: string) => void }> 
 
       {item.media ? (
         <LinearGradient
-          colors={[`${item.climber.avatarColor}55`, colors.surfaceMuted]}
+          colors={[`${climberColor}55`, colors.surfaceMuted]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.media}
@@ -204,6 +261,7 @@ const FeedCard: React.FC<{ item: FeedItem; onOpenRoute: (id: string) => void }> 
           reactions={item.reactions}
           comments={item.comments}
           reactedByMe={item.reactedByMe}
+          onReact={onReact}
         />
       </View>
     </Card>
@@ -424,5 +482,14 @@ const styles = StyleSheet.create({
   },
   feedFooter: {
     marginTop: spacing.xs,
+  },
+  loader: {
+    marginTop: spacing.xl,
+  },
+  emptyText: {
+    ...typography.body,
+    color: colors.textMuted,
+    textAlign: 'center',
+    marginTop: spacing.xl,
   },
 });

@@ -1,19 +1,25 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { useCrews, useToggleCrew } from '../../src/api/hooks';
+import type { Crew } from '../../src/api/types';
 import { AvatarStack } from '../../src/components/AvatarStack';
 import { Card } from '../../src/components/Card';
 import { Icon } from '../../src/components/Icon';
 import { IconButton } from '../../src/components/IconButton';
 import { Screen } from '../../src/components/Screen';
 import { SectionHeader } from '../../src/components/SectionHeader';
-import { crews, type Crew } from '../../src/data/mock';
 import { colors, gradients, radius, spacing, typography } from '../../src/theme';
 
 export default function CrewsScreen() {
-  const mine = crews.filter((c) => c.joined);
-  const discover = crews.filter((c) => !c.joined);
+  const { data: crews, isLoading } = useCrews();
+  const toggle = useToggleCrew();
+  const mine = (crews ?? []).filter((c) => c.joined);
+  const discover = (crews ?? []).filter((c) => !c.joined);
+
+  const onToggle = (crew: Crew) =>
+    toggle.mutate({ id: crew.id, join: !crew.joined });
 
   return (
     <Screen scroll edges={['top']}>
@@ -42,25 +48,46 @@ export default function CrewsScreen() {
         </View>
       </LinearGradient>
 
-      <SectionHeader title="Your crews" />
-      <View style={styles.list}>
-        {mine.map((crew) => (
-          <CrewCard key={crew.id} crew={crew} joined />
-        ))}
-      </View>
+      {isLoading ? (
+        <ActivityIndicator color={colors.accent} style={styles.loader} />
+      ) : (
+        <>
+          <SectionHeader title="Your crews" />
+          <View style={styles.list}>
+            {mine.length === 0 ? (
+              <Text style={styles.emptyText}>
+                You haven’t joined a crew yet.
+              </Text>
+            ) : (
+              mine.map((crew) => (
+                <CrewCard
+                  key={crew.id}
+                  crew={crew}
+                  joined
+                  onToggle={() => onToggle(crew)}
+                />
+              ))
+            )}
+          </View>
 
-      <View style={styles.spacer} />
-      <SectionHeader title="Discover" action="See all" />
-      <View style={styles.list}>
-        {discover.map((crew) => (
-          <CrewCard key={crew.id} crew={crew} />
-        ))}
-      </View>
+          <View style={styles.spacer} />
+          <SectionHeader title="Discover" action="See all" />
+          <View style={styles.list}>
+            {discover.map((crew) => (
+              <CrewCard key={crew.id} crew={crew} onToggle={() => onToggle(crew)} />
+            ))}
+          </View>
+        </>
+      )}
     </Screen>
   );
 }
 
-const CrewCard: React.FC<{ crew: Crew; joined?: boolean }> = ({ crew, joined }) => (
+const CrewCard: React.FC<{
+  crew: Crew;
+  joined?: boolean;
+  onToggle: () => void;
+}> = ({ crew, joined, onToggle }) => (
   <Card style={styles.crewCard}>
     <View style={styles.crewTop}>
       <View style={styles.crewEmoji}>
@@ -73,12 +100,12 @@ const CrewCard: React.FC<{ crew: Crew; joined?: boolean }> = ({ crew, joined }) 
         </Text>
       </View>
       {joined ? (
-        <View style={styles.joinedPill}>
+        <Pressable style={styles.joinedPill} onPress={onToggle}>
           <Icon name="checkmark" size={13} color={colors.success} />
           <Text style={styles.joinedText}>Joined</Text>
-        </View>
+        </Pressable>
       ) : (
-        <Pressable style={styles.joinBtn}>
+        <Pressable style={styles.joinBtn} onPress={onToggle}>
           <Text style={styles.joinText}>Join</Text>
         </Pressable>
       )}
@@ -137,6 +164,13 @@ const styles = StyleSheet.create({
   },
   list: {
     gap: spacing.md,
+  },
+  loader: {
+    marginTop: spacing['2xl'],
+  },
+  emptyText: {
+    ...typography.body,
+    color: colors.textMuted,
   },
   spacer: {
     height: spacing['2xl'],

@@ -1,7 +1,8 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
+  Alert,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -11,13 +12,15 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { useGyms, useLogClimb, useProfile } from '../src/api/hooks';
+import type { ClimbOutcome } from '../src/api/types';
 import { Button } from '../src/components/Button';
 import { Icon, type IconName } from '../src/components/Icon';
 import { NavHeader } from '../src/components/NavHeader';
 import { gradeColor, colors, gradients, radius, spacing, typography } from '../src/theme';
 
 const GRADES = ['V0', 'V1', 'V2', 'V3', 'V4', 'V5', 'V6', 'V7'];
-const OUTCOMES: { key: string; label: string; icon: IconName; color: string }[] = [
+const OUTCOMES: { key: ClimbOutcome; label: string; icon: IconName; color: string }[] = [
   { key: 'flash', label: 'Flash', icon: 'flash', color: colors.cyan },
   { key: 'send', label: 'Send', icon: 'trophy', color: colors.success },
   { key: 'project', label: 'Project', icon: 'construct', color: colors.warning },
@@ -25,9 +28,44 @@ const OUTCOMES: { key: string; label: string; icon: IconName; color: string }[] 
 
 export default function LogScreen() {
   const router = useRouter();
-  const [grade, setGrade] = useState('V4');
-  const [outcome, setOutcome] = useState('send');
+  const params = useLocalSearchParams<{ routeId?: string; grade?: string }>();
+  const { data: gyms } = useGyms();
+  const { data: profile } = useProfile();
+  const logClimb = useLogClimb();
+
+  const [grade, setGrade] = useState(params.grade ?? 'V4');
+  const [outcome, setOutcome] = useState<ClimbOutcome>('send');
   const [attempts, setAttempts] = useState(1);
+  const [note, setNote] = useState('');
+  const [gymId, setGymId] = useState<string | null>(null);
+
+  const resolvedGymId =
+    gymId ?? profile?.homeGym?.id ?? gyms?.[0]?.id ?? null;
+  const selectedGym = gyms?.find((g) => g.id === resolvedGymId) ?? null;
+
+  const cycleGym = () => {
+    if (!gyms || gyms.length === 0) return;
+    const idx = gyms.findIndex((g) => g.id === resolvedGymId);
+    setGymId(gyms[(idx + 1) % gyms.length].id);
+  };
+
+  const submit = () => {
+    logClimb.mutate(
+      {
+        grade,
+        outcome,
+        attempts,
+        note: note.trim() || undefined,
+        gymId: resolvedGymId ?? undefined,
+        routeId: params.routeId,
+      },
+      {
+        onSuccess: () => router.back(),
+        onError: () =>
+          Alert.alert('Could not log climb', 'Please try again.'),
+      },
+    );
+  };
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
@@ -131,15 +169,19 @@ export default function LogScreen() {
         </View>
 
         <Text style={styles.label}>Gym</Text>
-        <Pressable style={styles.selectRow}>
+        <Pressable style={styles.selectRow} onPress={cycleGym}>
           <Icon name="business-outline" size={18} color={colors.textMuted} />
-          <Text style={styles.selectText}>The Cliffs LIC</Text>
+          <Text style={styles.selectText}>
+            {selectedGym?.name ?? 'Select gym'}
+          </Text>
           <View style={{ flex: 1 }} />
           <Icon name="chevron-forward" size={18} color={colors.textSubtle} />
         </Pressable>
 
         <Text style={styles.label}>Notes</Text>
         <TextInput
+          value={note}
+          onChangeText={setNote}
           placeholder="How did it feel? Beta, conditions…"
           placeholderTextColor={colors.textSubtle}
           multiline
@@ -156,7 +198,8 @@ export default function LogScreen() {
         <Button
           label="Log climb"
           size="lg"
-          onPress={() => router.back()}
+          loading={logClimb.isPending}
+          onPress={submit}
           leading={<Icon name="checkmark" size={20} color={colors.accentText} />}
         />
       </View>

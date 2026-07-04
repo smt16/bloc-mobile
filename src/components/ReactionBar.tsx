@@ -1,30 +1,48 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import type { ReactionType } from '../api/types';
 import { colors, radius, spacing, typography } from '../theme';
 import { Icon, type IconName } from './Icon';
-import type { Reaction } from '../data/mock';
 
 type Props = {
   reactions: { fire: number; strong: number; clap: number };
   comments: number;
-  reactedByMe?: Reaction;
+  reactedByMe?: ReactionType | null;
+  onReact?: (type: ReactionType) => void;
 };
 
-const REACTIONS: { key: Reaction; icon: IconName; color: string; label: string }[] = [
+const REACTIONS: {
+  key: ReactionType;
+  icon: IconName;
+  color: string;
+  label: string;
+}[] = [
   { key: 'fire', icon: 'flame', color: colors.accent, label: 'Fire' },
   { key: 'strong', icon: 'barbell', color: colors.purple, label: 'Strong' },
   { key: 'clap', icon: 'hand-left', color: colors.cyan, label: 'Respect' },
 ];
 
 /** Climbing-native encouragement bar — fire / strong / respect + comments. */
-export const ReactionBar: React.FC<Props> = ({ reactions, comments, reactedByMe }) => {
-  const [mine, setMine] = useState<Reaction | undefined>(reactedByMe);
+export const ReactionBar: React.FC<Props> = ({
+  reactions,
+  comments,
+  reactedByMe,
+  onReact,
+}) => {
+  const [mine, setMine] = useState<ReactionType | undefined>(
+    reactedByMe ?? undefined,
+  );
 
-  const countFor = (key: Reaction) => {
+  useEffect(() => {
+    setMine(reactedByMe ?? undefined);
+  }, [reactedByMe]);
+
+  const countFor = (key: ReactionType) => {
     const base = reactions[key];
-    if (reactedByMe === key && mine !== key) return base - 1;
-    if (reactedByMe !== key && mine === key) return base + 1;
+    const original = reactedByMe ?? undefined;
+    if (original === key && mine !== key) return base - 1;
+    if (original !== key && mine === key) return base + 1;
     return base;
   };
 
@@ -35,7 +53,10 @@ export const ReactionBar: React.FC<Props> = ({ reactions, comments, reactedByMe 
         return (
           <Pressable
             key={r.key}
-            onPress={() => setMine(active ? undefined : r.key)}
+            onPress={() => {
+              setMine(active ? undefined : r.key);
+              onReact?.(r.key);
+            }}
             style={[
               styles.pill,
               active && { backgroundColor: `${r.color}26`, borderColor: `${r.color}55` },
