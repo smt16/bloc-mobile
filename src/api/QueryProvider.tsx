@@ -1,10 +1,3 @@
-/**
- * App-wide TanStack Query provider.
- *
- * Holds a single QueryClient for the lifetime of the app. Defaults are tuned
- * for a mobile network: a short stale time, one retry, and no refetch on every
- * screen focus (screens opt in where it matters).
- */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React, { useState } from 'react';
 
