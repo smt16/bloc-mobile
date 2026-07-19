@@ -1,48 +1,38 @@
 /**
  * Bloc design tokens.
  *
- * Minimal + modern. Dark by default with a saturated chalk-orange accent that
- * nods to climbing chalk dust + warm holds.
+ * Brand accent is the generic `orange` scale (`orange.main` = 500).
+ * Light/dark semantic surfaces live in `palettes.ts` and are applied via
+ * `ThemeProvider` (device appearance by default).
+ *
+ * Prefer NativeWind utilities (`bg-bg`, `text-accent`, `bg-orange-main`) for
+ * static styling. Use `useTheme().colors` for dynamic/runtime styles.
  */
-export const colors = {
-  bg: '#0B0B0F',
-  bgElevated: '#15151C',
-  surface: '#1B1B24',
-  surfaceMuted: '#22222C',
-  surfaceHover: '#2A2A36',
-  border: 'rgba(255, 255, 255, 0.08)',
-  borderStrong: 'rgba(255, 255, 255, 0.16)',
 
-  text: '#F5F5F7',
-  textMuted: 'rgba(245, 245, 247, 0.64)',
-  textSubtle: 'rgba(245, 245, 247, 0.42)',
+import { darkColors, lightColors, type SemanticColors } from './palettes';
+import { orange } from './orange';
 
-  accent: '#FF6B3D',
-  accentMuted: 'rgba(255, 107, 61, 0.16)',
-  accentText: '#0B0B0F',
+export { orange };
+export { lightColors, darkColors };
+export type { SemanticColors };
 
-  purple: '#8B5CF6',
-  purpleMuted: 'rgba(139, 92, 246, 0.16)',
-  cyan: '#38E1D6',
-  cyanMuted: 'rgba(56, 225, 214, 0.16)',
-
-  success: '#3DDC97',
-  successMuted: 'rgba(61, 220, 151, 0.16)',
-  warning: '#F2C94C',
-  danger: '#FF5A5F',
-};
+/**
+ * @deprecated Prefer `useTheme().colors` so light/dark updates apply.
+ * Static fallback matches the dark palette for modules evaluated at import time.
+ */
+export const colors: SemanticColors = darkColors;
 
 /**
  * Gradient stops used across hero moments + progression surfaces.
- * The signature Bloc gradient runs chalk-orange → magenta → violet.
+ * Brand gradient leans on orange-main → deep → violet.
  */
 export const gradients = {
-  brand: ['#FF6B3D', '#FF3D77', '#8B5CF6'] as const,
-  ember: ['#FF8A3D', '#FF3D5A'] as const,
+  brand: [orange.main, orange[600], '#8B5CF6'] as const,
+  ember: [orange[400], orange[600]] as const,
   aurora: ['#38E1D6', '#8B5CF6'] as const,
   send: ['#3DDC97', '#38E1D6'] as const,
-  surface: ['#1B1B24', '#14141B'] as const,
-  fade: ['rgba(11,11,15,0)', '#0B0B0F'] as const,
+  surface: [darkColors.surface, darkColors.bgElevated] as const,
+  fade: ['rgba(12,10,8,0)', darkColors.bg] as const,
 };
 
 /**
@@ -54,8 +44,8 @@ export const gradeColors: Record<string, string> = {
   V1: '#3DDC97',
   V2: '#38E1D6',
   V3: '#F2C94C',
-  V4: '#FF9F45',
-  V5: '#FF6B3D',
+  V4: orange[400],
+  V5: orange.main,
   V6: '#FF3D5A',
   V7: '#FF3D77',
   V8: '#C13DFF',
@@ -64,7 +54,7 @@ export const gradeColors: Record<string, string> = {
 };
 
 export const gradeColor = (grade: string): string =>
-  gradeColors[grade.toUpperCase()] ?? colors.accent;
+  gradeColors[grade.toUpperCase()] ?? orange.main;
 
 export const shadows = {
   card: {
@@ -82,7 +72,7 @@ export const shadows = {
     elevation: 16,
   },
   glow: {
-    shadowColor: '#FF6B3D',
+    shadowColor: orange.main,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.5,
     shadowRadius: 20,
@@ -154,6 +144,7 @@ export const typography = {
 };
 
 export const theme = {
+  orange,
   colors,
   spacing,
   radius,
@@ -163,3 +154,7 @@ export const theme = {
   shadows,
 };
 export type Theme = typeof theme;
+
+export { cn } from './cn';
+export { ThemeProvider, useTheme, useThemeColors } from './ThemeProvider';
+export { useThemedStyles } from './useThemedStyles';

@@ -1,5 +1,5 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   Image,
   StyleSheet,
@@ -9,7 +9,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 
-import { colors, gradients, typography } from '../theme';
+import { gradients, typography, useTheme, type SemanticColors } from '../theme';
 
 type Props = {
   initials?: string;
@@ -27,13 +27,17 @@ type Props = {
  */
 export const Avatar: React.FC<Props> = ({
   initials = '?',
-  color = colors.accent,
+  color,
   uri,
   size = 44,
   ring = false,
   gradientRing = false,
   style,
 }) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const fill = color ?? colors.accent;
+
   const inner = (
     <View
       style={[
@@ -42,7 +46,7 @@ export const Avatar: React.FC<Props> = ({
           width: size,
           height: size,
           borderRadius: size / 2,
-          backgroundColor: uri ? colors.surface : color,
+          backgroundColor: uri ? colors.surface : fill,
         },
       ]}
     >
@@ -60,7 +64,7 @@ export const Avatar: React.FC<Props> = ({
   if (gradientRing) {
     return (
       <LinearGradient
-        colors={gradients.brand}
+        colors={[...gradients.brand]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={[styles.ringWrap, { borderRadius: (size + 8) / 2, padding: 2.5 }, style]}
@@ -89,27 +93,28 @@ export const Avatar: React.FC<Props> = ({
   return <View style={style}>{inner}</View>;
 };
 
-const styles = StyleSheet.create({
-  inner: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  initials: {
-    ...typography.bodyStrong,
-    color: colors.bg,
-    fontWeight: '800',
-  },
-  ringWrap: {
-    alignSelf: 'flex-start',
-  },
-  ringGap: {
-    backgroundColor: colors.bg,
-  },
-  solidRing: {
-    alignSelf: 'flex-start',
-    backgroundColor: colors.bg,
-    borderWidth: 2,
-    borderColor: colors.accent,
-  },
-});
+const createStyles = (colors: SemanticColors) =>
+  StyleSheet.create({
+    inner: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      overflow: 'hidden',
+    },
+    initials: {
+      ...typography.bodyStrong,
+      color: colors.bg,
+      fontWeight: '800',
+    },
+    ringWrap: {
+      alignSelf: 'flex-start',
+    },
+    ringGap: {
+      backgroundColor: colors.bg,
+    },
+    solidRing: {
+      alignSelf: 'flex-start',
+      backgroundColor: colors.bg,
+      borderWidth: 2,
+      borderColor: colors.accent,
+    },
+  });

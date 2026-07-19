@@ -1,7 +1,7 @@
 import React from 'react';
-import { StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
+import { Text, View, type StyleProp, type ViewStyle } from 'react-native';
 
-import { colors, spacing, typography } from '../theme';
+import { typography } from '../theme';
 
 type Props = {
   size?: 'sm' | 'md' | 'lg';
@@ -21,30 +21,35 @@ export const BrandMark: React.FC<Props> = ({
   const dimensions = sizeMap[size];
 
   return (
-    <View style={[styles.row, style]}>
+    <View className="flex-row items-center gap-md" style={style}>
       <View
-        style={[
-          styles.mark,
-          {
-            width: dimensions.mark,
-            height: dimensions.mark,
-            borderRadius: dimensions.mark / 4,
-          },
-        ]}
+        className="items-center justify-center bg-accent"
+        style={{
+          width: dimensions.mark,
+          height: dimensions.mark,
+          borderRadius: dimensions.mark / 4,
+        }}
       >
         <View
-          style={[
-            styles.inner,
-            {
-              width: dimensions.mark * 0.45,
-              height: dimensions.mark * 0.45,
-              borderRadius: dimensions.mark * 0.225,
-            },
-          ]}
+          className="bg-bg"
+          style={{
+            width: dimensions.mark * 0.45,
+            height: dimensions.mark * 0.45,
+            borderRadius: dimensions.mark * 0.225,
+          }}
         />
       </View>
       {showWordmark ? (
-        <Text style={[styles.wordmark, { fontSize: dimensions.text }]}>bloc</Text>
+        <Text
+          className="text-text"
+          style={{
+            fontSize: dimensions.text,
+            fontWeight: typography.display.fontWeight,
+            letterSpacing: -0.5,
+          }}
+        >
+          bloc
+        </Text>
       ) : null}
     </View>
   );
@@ -55,24 +60,3 @@ const sizeMap = {
   md: { mark: 36, text: 26 },
   lg: { mark: 56, text: 40 },
 };
-
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  mark: {
-    backgroundColor: colors.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  inner: {
-    backgroundColor: colors.bg,
-  },
-  wordmark: {
-    color: colors.text,
-    fontWeight: typography.display.fontWeight,
-    letterSpacing: -0.5,
-  },
-});

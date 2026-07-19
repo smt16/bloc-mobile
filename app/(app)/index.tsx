@@ -27,18 +27,22 @@ import { ProgressBar } from '../../src/components/ProgressBar';
 import { ReactionBar } from '../../src/components/ReactionBar';
 import { Screen } from '../../src/components/Screen';
 import { SectionHeader } from '../../src/components/SectionHeader';
-import { colors, gradients, radius, spacing, typography } from '../../src/theme';
-
-const KIND_META: Record<FeedKind, { icon: IconName; label: string; color: string }> = {
-  send: { icon: 'trophy', label: 'Sent', color: colors.accent },
-  session: { icon: 'time', label: 'Session', color: colors.cyan },
-  milestone: { icon: 'flame', label: 'Milestone', color: colors.purple },
-  project: { icon: 'construct', label: 'Projecting', color: colors.warning },
-};
+import { gradients, radius, spacing, typography, useTheme, type SemanticColors } from '../../src/theme';
 
 export default function FeedScreen() {
   const { user } = useAuth();
   const router = useRouter();
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const kindMeta = useMemo(
+    (): Record<FeedKind, { icon: IconName; label: string; color: string }> => ({
+      send: { icon: 'trophy', label: 'Sent', color: colors.accent },
+      session: { icon: 'time', label: 'Session', color: colors.cyan },
+      milestone: { icon: 'flame', label: 'Milestone', color: colors.purple },
+      project: { icon: 'construct', label: 'Projecting', color: colors.warning },
+    }),
+    [colors],
+  );
   const feedQuery = useFeed('global');
   const profileQuery = useProfile();
   const climbersQuery = useClimbers();
@@ -65,7 +69,7 @@ export default function FeedScreen() {
         ]
       : [{ id: 'me', name: 'You', initials: 'Y', avatarColor: colors.accent }];
     return [...me, ...(climbersQuery.data ?? [])];
-  }, [profileQuery.data, climbersQuery.data]);
+  }, [profileQuery.data, climbersQuery.data, colors.accent]);
 
   return (
     <Screen scroll padded={false} edges={['top']}>
@@ -165,6 +169,7 @@ export default function FeedScreen() {
                 <FeedCard
                   key={item.id}
                   item={item}
+                  kindMeta={kindMeta}
                   onOpenRoute={(id) => router.push(`/route/${id}`)}
                   onReact={(type) =>
                     react.mutate({ feedItemId: item.id, type })
@@ -184,22 +189,29 @@ const Stat: React.FC<{ icon: IconName; label: string; value: string; tone: strin
   label,
   value,
   tone,
-}) => (
-  <Card style={styles.stat} padded>
-    <View style={[styles.statIcon, { backgroundColor: `${tone}22` }]}>
-      <Icon name={icon} size={16} color={tone} />
-    </View>
-    <Text style={styles.statValue}>{value}</Text>
-    <Text style={styles.statLabel}>{label}</Text>
-  </Card>
-);
+}) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  return (
+    <Card style={styles.stat} padded>
+      <View style={[styles.statIcon, { backgroundColor: `${tone}22` }]}>
+        <Icon name={icon} size={16} color={tone} />
+      </View>
+      <Text style={styles.statValue}>{value}</Text>
+      <Text style={styles.statLabel}>{label}</Text>
+    </Card>
+  );
+};
 
 const FeedCard: React.FC<{
   item: FeedItem;
+  kindMeta: Record<FeedKind, { icon: IconName; label: string; color: string }>;
   onOpenRoute: (id: string) => void;
   onReact: (type: import('../../src/api/types').ReactionType) => void;
-}> = ({ item, onOpenRoute, onReact }) => {
-  const meta = KIND_META[item.kind];
+}> = ({ item, kindMeta, onOpenRoute, onReact }) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const meta = kindMeta[item.kind];
   const climberInitials = item.climber?.initials ?? '?';
   const climberColor = item.climber?.avatarColor ?? colors.surfaceMuted;
   const climberName = item.climber?.name ?? 'Climber';
@@ -268,228 +280,229 @@ const FeedCard: React.FC<{
   );
 };
 
-const styles = StyleSheet.create({
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    paddingHorizontal: spacing.xl,
-    paddingTop: spacing.sm,
-    marginBottom: spacing.lg,
-  },
-  headerActions: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  eyebrow: {
-    ...typography.overline,
-    color: colors.accent,
-    marginBottom: 2,
-  },
-  greeting: {
-    ...typography.h1,
-    color: colors.text,
-  },
-  padded: {
-    paddingHorizontal: spacing.xl,
-  },
-  stories: {
-    paddingHorizontal: spacing.xl,
-    gap: spacing.lg,
-    paddingBottom: spacing.xl,
-  },
-  story: {
-    alignItems: 'center',
-    width: 66,
-    gap: 6,
-  },
-  storyAdd: {
-    position: 'absolute',
-    top: 40,
-    right: 6,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: colors.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: colors.bg,
-  },
-  storyName: {
-    ...typography.caption,
-    fontSize: 11,
-    color: colors.textMuted,
-    maxWidth: 66,
-  },
-  hero: {
-    borderRadius: radius.xl,
-    padding: spacing.xl,
-    marginBottom: spacing.lg,
-  },
-  heroTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.lg,
-  },
-  heroStreak: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: 'rgba(11,11,15,0.18)',
-    paddingHorizontal: spacing.md,
-    paddingVertical: 6,
-    borderRadius: radius.pill,
-  },
-  heroStreakText: {
-    ...typography.caption,
-    color: colors.bg,
-    fontWeight: '800',
-  },
-  heroTitle: {
-    ...typography.h1,
-    color: colors.bg,
-    fontSize: 24,
-  },
-  heroSub: {
-    ...typography.body,
-    color: 'rgba(11,11,15,0.7)',
-    marginTop: 2,
-    marginBottom: spacing.lg,
-  },
-  heroBar: {
-    marginTop: spacing.xs,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    gap: spacing.md,
-    marginBottom: spacing['2xl'],
-  },
-  stat: {
-    flex: 1,
-    gap: 6,
-  },
-  statIcon: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 2,
-  },
-  statValue: {
-    ...typography.h2,
-    color: colors.text,
-  },
-  statLabel: {
-    ...typography.caption,
-    color: colors.textMuted,
-  },
-  section: {
-    gap: spacing.lg,
-    paddingBottom: spacing['3xl'],
-  },
-  feed: {
-    gap: spacing.lg,
-  },
-  feedCard: {
-    padding: spacing.lg,
-    gap: spacing.md,
-  },
-  feedHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  feedHeaderCopy: {
-    flex: 1,
-    gap: 2,
-  },
-  feedLine: {
-    ...typography.body,
-  },
-  feedClimber: {
-    color: colors.text,
-    fontWeight: '700',
-  },
-  feedAction: {
-    color: colors.textMuted,
-  },
-  feedMetaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  feedMeta: {
-    ...typography.caption,
-    color: colors.textSubtle,
-  },
-  kindPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 5,
-    borderRadius: radius.pill,
-  },
-  kindPillText: {
-    ...typography.caption,
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  routeChipRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    backgroundColor: colors.surfaceMuted,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-  },
-  routeName: {
-    ...typography.bodyStrong,
-    color: colors.text,
-  },
-  routeAttempts: {
-    ...typography.caption,
-    color: colors.textMuted,
-  },
-  feedNote: {
-    ...typography.body,
-    color: colors.textMuted,
-    lineHeight: 22,
-  },
-  media: {
-    height: 168,
-    borderRadius: radius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-  },
-  playButton: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: 'rgba(11,11,15,0.45)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  mediaLabel: {
-    ...typography.caption,
-    color: colors.text,
-    fontWeight: '600',
-  },
-  feedFooter: {
-    marginTop: spacing.xs,
-  },
-  loader: {
-    marginTop: spacing.xl,
-  },
-  emptyText: {
-    ...typography.body,
-    color: colors.textMuted,
-    textAlign: 'center',
-    marginTop: spacing.xl,
-  },
-});
+const createStyles = (colors: SemanticColors) =>
+  StyleSheet.create({
+    headerRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+      paddingHorizontal: spacing.xl,
+      paddingTop: spacing.sm,
+      marginBottom: spacing.lg,
+    },
+    headerActions: {
+      flexDirection: 'row',
+      gap: spacing.sm,
+    },
+    eyebrow: {
+      ...typography.overline,
+      color: colors.accent,
+      marginBottom: 2,
+    },
+    greeting: {
+      ...typography.h1,
+      color: colors.text,
+    },
+    padded: {
+      paddingHorizontal: spacing.xl,
+    },
+    stories: {
+      paddingHorizontal: spacing.xl,
+      gap: spacing.lg,
+      paddingBottom: spacing.xl,
+    },
+    story: {
+      alignItems: 'center',
+      width: 66,
+      gap: 6,
+    },
+    storyAdd: {
+      position: 'absolute',
+      top: 40,
+      right: 6,
+      width: 20,
+      height: 20,
+      borderRadius: 10,
+      backgroundColor: colors.accent,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 2,
+      borderColor: colors.bg,
+    },
+    storyName: {
+      ...typography.caption,
+      fontSize: 11,
+      color: colors.textMuted,
+      maxWidth: 66,
+    },
+    hero: {
+      borderRadius: radius.xl,
+      padding: spacing.xl,
+      marginBottom: spacing.lg,
+    },
+    heroTop: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: spacing.lg,
+    },
+    heroStreak: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      backgroundColor: 'rgba(11,11,15,0.18)',
+      paddingHorizontal: spacing.md,
+      paddingVertical: 6,
+      borderRadius: radius.pill,
+    },
+    heroStreakText: {
+      ...typography.caption,
+      color: colors.bg,
+      fontWeight: '800',
+    },
+    heroTitle: {
+      ...typography.h1,
+      color: colors.bg,
+      fontSize: 24,
+    },
+    heroSub: {
+      ...typography.body,
+      color: 'rgba(11,11,15,0.7)',
+      marginTop: 2,
+      marginBottom: spacing.lg,
+    },
+    heroBar: {
+      marginTop: spacing.xs,
+    },
+    statsRow: {
+      flexDirection: 'row',
+      gap: spacing.md,
+      marginBottom: spacing['2xl'],
+    },
+    stat: {
+      flex: 1,
+      gap: 6,
+    },
+    statIcon: {
+      width: 30,
+      height: 30,
+      borderRadius: 15,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 2,
+    },
+    statValue: {
+      ...typography.h2,
+      color: colors.text,
+    },
+    statLabel: {
+      ...typography.caption,
+      color: colors.textMuted,
+    },
+    section: {
+      gap: spacing.lg,
+      paddingBottom: spacing['3xl'],
+    },
+    feed: {
+      gap: spacing.lg,
+    },
+    feedCard: {
+      padding: spacing.lg,
+      gap: spacing.md,
+    },
+    feedHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
+    },
+    feedHeaderCopy: {
+      flex: 1,
+      gap: 2,
+    },
+    feedLine: {
+      ...typography.body,
+    },
+    feedClimber: {
+      color: colors.text,
+      fontWeight: '700',
+    },
+    feedAction: {
+      color: colors.textMuted,
+    },
+    feedMetaRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+    },
+    feedMeta: {
+      ...typography.caption,
+      color: colors.textSubtle,
+    },
+    kindPill: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 5,
+      borderRadius: radius.pill,
+    },
+    kindPillText: {
+      ...typography.caption,
+      fontSize: 11,
+      fontWeight: '700',
+    },
+    routeChipRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      backgroundColor: colors.surfaceMuted,
+      borderRadius: radius.md,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.md,
+    },
+    routeName: {
+      ...typography.bodyStrong,
+      color: colors.text,
+    },
+    routeAttempts: {
+      ...typography.caption,
+      color: colors.textMuted,
+    },
+    feedNote: {
+      ...typography.body,
+      color: colors.textMuted,
+      lineHeight: 22,
+    },
+    media: {
+      height: 168,
+      borderRadius: radius.md,
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: spacing.sm,
+    },
+    playButton: {
+      width: 52,
+      height: 52,
+      borderRadius: 26,
+      backgroundColor: 'rgba(11,11,15,0.45)',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    mediaLabel: {
+      ...typography.caption,
+      color: colors.text,
+      fontWeight: '600',
+    },
+    feedFooter: {
+      marginTop: spacing.xs,
+    },
+    loader: {
+      marginTop: spacing.xl,
+    },
+    emptyText: {
+      ...typography.body,
+      color: colors.textMuted,
+      textAlign: 'center',
+      marginTop: spacing.xl,
+    },
+  });

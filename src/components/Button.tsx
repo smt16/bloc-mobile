@@ -2,7 +2,6 @@ import React from 'react';
 import {
   ActivityIndicator,
   Pressable,
-  StyleSheet,
   Text,
   View,
   type GestureResponderEvent,
@@ -10,7 +9,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 
-import { colors, radius, spacing, typography } from '../theme';
+import { cn, useTheme } from '../theme';
 
 type Variant = 'primary' | 'secondary' | 'ghost';
 type Size = 'md' | 'lg';
@@ -25,7 +24,25 @@ type Props = {
   leading?: React.ReactNode;
   trailing?: React.ReactNode;
   style?: StyleProp<ViewStyle>;
+  className?: string;
   testID?: string;
+};
+
+const sizeClass: Record<Size, string> = {
+  md: 'min-h-[48px] px-xl py-md',
+  lg: 'min-h-[56px] px-2xl py-lg',
+};
+
+const variantContainer: Record<Variant, string> = {
+  primary: 'bg-accent active:opacity-85',
+  secondary: 'bg-surface border border-border-strong active:bg-surface-muted',
+  ghost: 'bg-transparent active:opacity-70',
+};
+
+const variantLabel: Record<Variant, string> = {
+  primary: 'text-accent-text',
+  secondary: 'text-text',
+  ghost: 'text-text-muted',
 };
 
 export const Button: React.FC<Props> = ({
@@ -38,9 +55,18 @@ export const Button: React.FC<Props> = ({
   leading,
   trailing,
   style,
+  className,
   testID,
 }) => {
+  const { colors } = useTheme();
   const isInactive = disabled || loading;
+
+  const spinnerColor =
+    variant === 'primary'
+      ? colors.accentText
+      : variant === 'secondary'
+        ? colors.text
+        : colors.textMuted;
 
   return (
     <Pressable
@@ -48,91 +74,26 @@ export const Button: React.FC<Props> = ({
       accessibilityState={{ disabled: isInactive, busy: loading }}
       onPress={isInactive ? undefined : onPress}
       testID={testID}
-      style={({ pressed }) => [
-        styles.base,
-        sizeStyles[size],
-        variantStyles[variant].container,
-        pressed && !isInactive && pressedStyles[variant],
-        isInactive && styles.disabled,
-        style,
-      ]}
+      style={style}
+      className={cn(
+        'flex-row items-center justify-center rounded-pill',
+        sizeClass[size],
+        variantContainer[variant],
+        isInactive && 'opacity-50',
+        className,
+      )}
     >
       {loading ? (
-        <ActivityIndicator color={variantStyles[variant].label.color} />
+        <ActivityIndicator color={spinnerColor} />
       ) : (
-        <View style={styles.inner}>
-          {leading ? <View style={styles.icon}>{leading}</View> : null}
-          <Text style={[styles.label, variantStyles[variant].label]} numberOfLines={1}>
+        <View className="flex-row items-center gap-sm">
+          {leading ? <View className="items-center justify-center">{leading}</View> : null}
+          <Text className={cn('text-body-strong', variantLabel[variant])} numberOfLines={1}>
             {label}
           </Text>
-          {trailing ? <View style={styles.icon}>{trailing}</View> : null}
+          {trailing ? <View className="items-center justify-center">{trailing}</View> : null}
         </View>
       )}
     </Pressable>
   );
-};
-
-const styles = StyleSheet.create({
-  base: {
-    borderRadius: radius.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-  },
-  inner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  icon: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  label: {
-    ...typography.bodyStrong,
-  },
-  disabled: {
-    opacity: 0.5,
-  },
-});
-
-const sizeStyles: Record<Size, ViewStyle> = {
-  md: {
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.xl,
-    minHeight: 48,
-  },
-  lg: {
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing['2xl'],
-    minHeight: 56,
-  },
-};
-
-const variantStyles: Record<
-  Variant,
-  { container: ViewStyle; label: { color: string } }
-> = {
-  primary: {
-    container: { backgroundColor: colors.accent },
-    label: { color: colors.accentText },
-  },
-  secondary: {
-    container: {
-      backgroundColor: colors.surface,
-      borderWidth: 1,
-      borderColor: colors.borderStrong,
-    },
-    label: { color: colors.text },
-  },
-  ghost: {
-    container: { backgroundColor: 'transparent' },
-    label: { color: colors.textMuted },
-  },
-};
-
-const pressedStyles: Record<Variant, ViewStyle> = {
-  primary: { opacity: 0.85 },
-  secondary: { backgroundColor: colors.surfaceMuted },
-  ghost: { opacity: 0.7 },
 };

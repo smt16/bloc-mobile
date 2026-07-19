@@ -4,7 +4,7 @@ import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { colors, gradients, radius, shadows, spacing, typography } from '../theme';
+import { gradients, radius, shadows, spacing, typography, useTheme } from '../theme';
 import { Icon, type IconName } from './Icon';
 
 /**
@@ -40,6 +40,7 @@ const TAB_META: Record<string, { label: string; icon: IconName; activeIcon: Icon
 export const TabBar: React.FC<TabBarProps> = ({ state, navigation }) => {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { colors } = useTheme();
 
   const routes = state.routes.filter((r) => TAB_META[r.name]);
   const left = routes.slice(0, 2);
@@ -70,13 +71,24 @@ export const TabBar: React.FC<TabBarProps> = ({ state, navigation }) => {
           size={23}
           color={focused ? colors.accent : colors.textSubtle}
         />
-        <Text style={[styles.label, focused && styles.labelActive]}>{meta.label}</Text>
+        <Text style={[styles.label, { color: focused ? colors.accent : colors.textSubtle }]}>
+          {meta.label}
+        </Text>
       </Pressable>
     );
   };
 
   return (
-    <View style={[styles.wrap, { paddingBottom: insets.bottom || spacing.md }]}>
+    <View
+      style={[
+        styles.wrap,
+        {
+          paddingBottom: insets.bottom || spacing.md,
+          backgroundColor: colors.bgElevated,
+          borderTopColor: colors.border,
+        },
+      ]}
+    >
       <View style={styles.bar}>
         {left.map((r) => renderTab(r.name))}
         <View style={styles.centerSlot} />
@@ -88,10 +100,10 @@ export const TabBar: React.FC<TabBarProps> = ({ state, navigation }) => {
         style={({ pressed }) => [styles.fabWrap, pressed && styles.fabPressed]}
       >
         <LinearGradient
-          colors={gradients.ember}
+          colors={[...gradients.ember]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          style={styles.fab}
+          style={[styles.fab, { borderColor: colors.bgElevated }]}
         >
           <Icon name="add" size={30} color={colors.bg} />
         </LinearGradient>
@@ -102,9 +114,7 @@ export const TabBar: React.FC<TabBarProps> = ({ state, navigation }) => {
 
 const styles = StyleSheet.create({
   wrap: {
-    backgroundColor: colors.bgElevated,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
     paddingTop: spacing.sm,
   },
   bar: {
@@ -124,11 +134,6 @@ const styles = StyleSheet.create({
   label: {
     ...typography.caption,
     fontSize: 11,
-    color: colors.textSubtle,
-  },
-  labelActive: {
-    color: colors.accent,
-    fontWeight: '700',
   },
   fabWrap: {
     position: 'absolute',
@@ -147,6 +152,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 4,
-    borderColor: colors.bgElevated,
   },
 });

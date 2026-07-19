@@ -1,6 +1,6 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, type Href } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -21,22 +21,23 @@ import { Card } from '../../src/components/Card';
 import { Icon, type IconName } from '../../src/components/Icon';
 import { Screen } from '../../src/components/Screen';
 import {
-  colors,
   gradeColor,
   gradients,
   radius,
   spacing,
   typography,
+  useTheme,
+  type SemanticColors,
 } from '../../src/theme';
 
 type ProfileTab = 'sends' | 'timeline' | 'achievements';
 
-const TONE: Record<Milestone['tone'], string> = {
+const getTone = (colors: SemanticColors): Record<Milestone['tone'], string> => ({
   accent: colors.accent,
   purple: colors.purple,
   cyan: colors.cyan,
   success: colors.success,
-};
+});
 
 const TAB_META: { key: ProfileTab; icon: IconName; label: string }[] = [
   { key: 'sends', icon: 'grid-outline', label: 'Sends' },
@@ -47,6 +48,8 @@ const TAB_META: { key: ProfileTab; icon: IconName; label: string }[] = [
 export default function ProfileScreen() {
   const { user, logout } = useAuth();
   const router = useRouter();
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { data: profile, isLoading, refetch, isRefetching } = useProfile();
   const [tab, setTab] = useState<ProfileTab>('sends');
   const [signingOut, setSigningOut] = useState(false);
@@ -354,6 +357,8 @@ const StatCell: React.FC<{
   highlight?: boolean;
   onPress?: () => void;
 }> = ({ value, label, highlight, onPress }) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const inner = (
     <>
       <Text style={[styles.statValue, highlight && { color: colors.accent }]}>
@@ -377,24 +382,28 @@ const Highlight: React.FC<{
   label: string;
   value: string;
   colors: readonly [string, string, ...string[]];
-}> = ({ icon, label, value, colors: gradient }) => (
-  <View style={styles.highlight}>
-    <LinearGradient
-      colors={gradient}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      style={styles.highlightRing}
-    >
-      <View style={styles.highlightInner}>
-        <Icon name={icon} size={20} color={colors.text} />
-      </View>
-    </LinearGradient>
-    <Text style={styles.highlightValue} numberOfLines={1}>
-      {value}
-    </Text>
-    <Text style={styles.highlightLabel}>{label}</Text>
-  </View>
-);
+}> = ({ icon, label, value, colors: gradient }) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  return (
+    <View style={styles.highlight}>
+      <LinearGradient
+        colors={gradient}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.highlightRing}
+      >
+        <View style={styles.highlightInner}>
+          <Icon name={icon} size={20} color={colors.text} />
+        </View>
+      </LinearGradient>
+      <Text style={styles.highlightValue} numberOfLines={1}>
+        {value}
+      </Text>
+      <Text style={styles.highlightLabel}>{label}</Text>
+    </View>
+  );
+};
 
 const EmptyTab: React.FC<{
   icon: IconName;
@@ -402,26 +411,32 @@ const EmptyTab: React.FC<{
   hint: string;
   action?: string;
   onAction?: () => void;
-}> = ({ icon, title, hint, action, onAction }) => (
-  <View style={styles.emptyTab}>
-    <View style={styles.emptyIcon}>
-      <Icon name={icon} size={28} color={colors.textSubtle} />
+}> = ({ icon, title, hint, action, onAction }) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  return (
+    <View style={styles.emptyTab}>
+      <View style={styles.emptyIcon}>
+        <Icon name={icon} size={28} color={colors.textSubtle} />
+      </View>
+      <Text style={styles.emptyTitle}>{title}</Text>
+      <Text style={styles.emptyHint}>{hint}</Text>
+      {action && onAction ? (
+        <Pressable style={styles.emptyAction} onPress={onAction}>
+          <Text style={styles.emptyActionText}>{action}</Text>
+        </Pressable>
+      ) : null}
     </View>
-    <Text style={styles.emptyTitle}>{title}</Text>
-    <Text style={styles.emptyHint}>{hint}</Text>
-    {action && onAction ? (
-      <Pressable style={styles.emptyAction} onPress={onAction}>
-        <Text style={styles.emptyActionText}>{action}</Text>
-      </Pressable>
-    ) : null}
-  </View>
-);
+  );
+};
 
 const TimelineRow: React.FC<{ milestone: Milestone; last: boolean }> = ({
   milestone,
   last,
 }) => {
-  const tone = TONE[milestone.tone];
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const tone = getTone(colors)[milestone.tone];
   return (
     <View style={styles.tlRow}>
       <View style={styles.tlGutter}>
@@ -453,7 +468,9 @@ const TimelineRow: React.FC<{ milestone: Milestone; last: boolean }> = ({
 };
 
 const BadgeTile: React.FC<{ achievement: Achievement }> = ({ achievement }) => {
-  const tone = TONE[achievement.tone];
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const tone = getTone(colors)[achievement.tone];
   return (
     <Card style={[styles.badge, !achievement.earned && styles.badgeLocked]}>
       <View
@@ -489,332 +506,333 @@ const BadgeTile: React.FC<{ achievement: Achievement }> = ({ achievement }) => {
   );
 };
 
-const styles = StyleSheet.create({
-  loader: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 320,
-  },
-  topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.xl,
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.md,
-  },
-  topSide: {
-    width: 40,
-    alignItems: 'flex-end',
-  },
-  username: {
-    ...typography.bodyStrong,
-    color: colors.text,
-    flex: 1,
-    textAlign: 'center',
-  },
-  identityRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.xl,
-    gap: spacing['2xl'],
-  },
-  statsCol: {
-    flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  statCell: {
-    alignItems: 'center',
-    gap: 2,
-  },
-  statValue: {
-    fontSize: 20,
-    lineHeight: 24,
-    fontWeight: '700',
-    color: colors.text,
-  },
-  statLabel: {
-    ...typography.caption,
-    color: colors.textMuted,
-  },
-  identityCopy: {
-    paddingHorizontal: spacing.xl,
-    marginTop: spacing.lg,
-    gap: spacing.xs,
-  },
-  displayName: {
-    ...typography.bodyStrong,
-    color: colors.text,
-    fontSize: 15,
-  },
-  bio: {
-    ...typography.body,
-    color: colors.text,
-    lineHeight: 20,
-  },
-  metaLine: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginTop: 2,
-  },
-  metaText: {
-    ...typography.caption,
-    color: colors.textMuted,
-  },
-  tagRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-    marginTop: spacing.sm,
-  },
-  styleTag: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 5,
-    borderRadius: radius.pill,
-  },
-  styleTagText: {
-    ...typography.caption,
-    color: colors.textMuted,
-    fontWeight: '600',
-  },
-  actionRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    paddingHorizontal: spacing.xl,
-    marginTop: spacing.lg,
-  },
-  actionBtn: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 8,
-    borderRadius: radius.md,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-  },
-  actionBtnText: {
-    ...typography.caption,
-    color: colors.text,
-    fontWeight: '700',
-  },
-  highlights: {
-    paddingHorizontal: spacing.xl,
-    gap: spacing.lg,
-    paddingTop: spacing.xl,
-    paddingBottom: spacing.md,
-  },
-  highlight: {
-    alignItems: 'center',
-    width: 72,
-    gap: 4,
-  },
-  highlightRing: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    padding: 2.5,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  highlightInner: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 29,
-    backgroundColor: colors.bg,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  highlightValue: {
-    ...typography.caption,
-    color: colors.text,
-    fontWeight: '700',
-    maxWidth: 72,
-    textAlign: 'center',
-  },
-  highlightLabel: {
-    ...typography.caption,
-    fontSize: 11,
-    color: colors.textSubtle,
-  },
-  tabBar: {
-    flexDirection: 'row',
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
-    marginTop: spacing.sm,
-  },
-  tabItem: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: spacing.md,
-    gap: spacing.sm,
-  },
-  tabIndicator: {
-    width: '100%',
-    height: 2,
-    backgroundColor: colors.text,
-    borderRadius: 1,
-  },
-  tabContent: {
-    paddingHorizontal: spacing.xl,
-    paddingTop: spacing.lg,
-    minHeight: 200,
-  },
-  pyramid: {
-    gap: spacing.md,
-  },
-  pyramidRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  pyramidGrade: {
-    ...typography.bodyStrong,
-    width: 32,
-    fontWeight: '800',
-  },
-  pyramidTrack: {
-    flex: 1,
-    height: 22,
-    backgroundColor: colors.surfaceMuted,
-    borderRadius: radius.sm,
-    overflow: 'hidden',
-  },
-  pyramidBar: {
-    height: '100%',
-    borderRadius: radius.sm,
-  },
-  pyramidCount: {
-    ...typography.caption,
-    color: colors.textMuted,
-    width: 24,
-    textAlign: 'right',
-  },
-  timeline: {
-    paddingBottom: 0,
-  },
-  tlRow: {
-    flexDirection: 'row',
-    gap: spacing.md,
-  },
-  tlGutter: {
-    alignItems: 'center',
-    width: 34,
-  },
-  tlNode: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    borderWidth: 1.5,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  tlLine: {
-    flex: 1,
-    width: 2,
-    backgroundColor: colors.border,
-    marginVertical: 4,
-  },
-  tlBody: {
-    flex: 1,
-    paddingBottom: spacing.lg,
-  },
-  tlHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  tlTitle: {
-    ...typography.bodyStrong,
-    color: colors.text,
-  },
-  tlDate: {
-    ...typography.caption,
-    color: colors.textSubtle,
-  },
-  tlDetail: {
-    ...typography.caption,
-    color: colors.textMuted,
-    marginTop: 2,
-  },
-  badgeGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.md,
-  },
-  badge: {
-    width: '31%',
-    alignItems: 'center',
-    gap: spacing.sm,
-    paddingVertical: spacing.lg,
-  },
-  badgeLocked: {
-    opacity: 0.55,
-  },
-  badgeIcon: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  badgeLabel: {
-    ...typography.caption,
-    fontSize: 11,
-    color: colors.text,
-    textAlign: 'center',
-    fontWeight: '600',
-  },
-  emptyTab: {
-    alignItems: 'center',
-    paddingVertical: spacing['3xl'],
-    gap: spacing.sm,
-  },
-  emptyIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.sm,
-  },
-  emptyTitle: {
-    ...typography.bodyStrong,
-    color: colors.text,
-  },
-  emptyHint: {
-    ...typography.caption,
-    color: colors.textMuted,
-    textAlign: 'center',
-    maxWidth: 260,
-  },
-  emptyAction: {
-    marginTop: spacing.md,
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.pill,
-    backgroundColor: colors.accentMuted,
-  },
-  emptyActionText: {
-    ...typography.caption,
-    color: colors.accent,
-    fontWeight: '700',
-  },
-  signingOut: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(11,11,15,0.6)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  bottomSpace: {
-    height: spacing['3xl'],
-  },
-});
+const createStyles = (colors: SemanticColors) =>
+  StyleSheet.create({
+    loader: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: 320,
+    },
+    topBar: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: spacing.xl,
+      paddingTop: spacing.sm,
+      paddingBottom: spacing.md,
+    },
+    topSide: {
+      width: 40,
+      alignItems: 'flex-end',
+    },
+    username: {
+      ...typography.bodyStrong,
+      color: colors.text,
+      flex: 1,
+      textAlign: 'center',
+    },
+    identityRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: spacing.xl,
+      gap: spacing['2xl'],
+    },
+    statsCol: {
+      flex: 1,
+      flexDirection: 'row',
+      justifyContent: 'space-around',
+    },
+    statCell: {
+      alignItems: 'center',
+      gap: 2,
+    },
+    statValue: {
+      fontSize: 20,
+      lineHeight: 24,
+      fontWeight: '700',
+      color: colors.text,
+    },
+    statLabel: {
+      ...typography.caption,
+      color: colors.textMuted,
+    },
+    identityCopy: {
+      paddingHorizontal: spacing.xl,
+      marginTop: spacing.lg,
+      gap: spacing.xs,
+    },
+    displayName: {
+      ...typography.bodyStrong,
+      color: colors.text,
+      fontSize: 15,
+    },
+    bio: {
+      ...typography.body,
+      color: colors.text,
+      lineHeight: 20,
+    },
+    metaLine: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      marginTop: 2,
+    },
+    metaText: {
+      ...typography.caption,
+      color: colors.textMuted,
+    },
+    tagRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: spacing.sm,
+      marginTop: spacing.sm,
+    },
+    styleTag: {
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      paddingHorizontal: spacing.md,
+      paddingVertical: 5,
+      borderRadius: radius.pill,
+    },
+    styleTagText: {
+      ...typography.caption,
+      color: colors.textMuted,
+      fontWeight: '600',
+    },
+    actionRow: {
+      flexDirection: 'row',
+      gap: spacing.sm,
+      paddingHorizontal: spacing.xl,
+      marginTop: spacing.lg,
+    },
+    actionBtn: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 8,
+      borderRadius: radius.md,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.borderStrong,
+    },
+    actionBtnText: {
+      ...typography.caption,
+      color: colors.text,
+      fontWeight: '700',
+    },
+    highlights: {
+      paddingHorizontal: spacing.xl,
+      gap: spacing.lg,
+      paddingTop: spacing.xl,
+      paddingBottom: spacing.md,
+    },
+    highlight: {
+      alignItems: 'center',
+      width: 72,
+      gap: 4,
+    },
+    highlightRing: {
+      width: 64,
+      height: 64,
+      borderRadius: 32,
+      padding: 2.5,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    highlightInner: {
+      width: '100%',
+      height: '100%',
+      borderRadius: 29,
+      backgroundColor: colors.bg,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    highlightValue: {
+      ...typography.caption,
+      color: colors.text,
+      fontWeight: '700',
+      maxWidth: 72,
+      textAlign: 'center',
+    },
+    highlightLabel: {
+      ...typography.caption,
+      fontSize: 11,
+      color: colors.textSubtle,
+    },
+    tabBar: {
+      flexDirection: 'row',
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: colors.border,
+      marginTop: spacing.sm,
+    },
+    tabItem: {
+      flex: 1,
+      alignItems: 'center',
+      paddingVertical: spacing.md,
+      gap: spacing.sm,
+    },
+    tabIndicator: {
+      width: '100%',
+      height: 2,
+      backgroundColor: colors.text,
+      borderRadius: 1,
+    },
+    tabContent: {
+      paddingHorizontal: spacing.xl,
+      paddingTop: spacing.lg,
+      minHeight: 200,
+    },
+    pyramid: {
+      gap: spacing.md,
+    },
+    pyramidRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
+    },
+    pyramidGrade: {
+      ...typography.bodyStrong,
+      width: 32,
+      fontWeight: '800',
+    },
+    pyramidTrack: {
+      flex: 1,
+      height: 22,
+      backgroundColor: colors.surfaceMuted,
+      borderRadius: radius.sm,
+      overflow: 'hidden',
+    },
+    pyramidBar: {
+      height: '100%',
+      borderRadius: radius.sm,
+    },
+    pyramidCount: {
+      ...typography.caption,
+      color: colors.textMuted,
+      width: 24,
+      textAlign: 'right',
+    },
+    timeline: {
+      paddingBottom: 0,
+    },
+    tlRow: {
+      flexDirection: 'row',
+      gap: spacing.md,
+    },
+    tlGutter: {
+      alignItems: 'center',
+      width: 34,
+    },
+    tlNode: {
+      width: 34,
+      height: 34,
+      borderRadius: 17,
+      borderWidth: 1.5,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    tlLine: {
+      flex: 1,
+      width: 2,
+      backgroundColor: colors.border,
+      marginVertical: 4,
+    },
+    tlBody: {
+      flex: 1,
+      paddingBottom: spacing.lg,
+    },
+    tlHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    tlTitle: {
+      ...typography.bodyStrong,
+      color: colors.text,
+    },
+    tlDate: {
+      ...typography.caption,
+      color: colors.textSubtle,
+    },
+    tlDetail: {
+      ...typography.caption,
+      color: colors.textMuted,
+      marginTop: 2,
+    },
+    badgeGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: spacing.md,
+    },
+    badge: {
+      width: '31%',
+      alignItems: 'center',
+      gap: spacing.sm,
+      paddingVertical: spacing.lg,
+    },
+    badgeLocked: {
+      opacity: 0.55,
+    },
+    badgeIcon: {
+      width: 46,
+      height: 46,
+      borderRadius: 23,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    badgeLabel: {
+      ...typography.caption,
+      fontSize: 11,
+      color: colors.text,
+      textAlign: 'center',
+      fontWeight: '600',
+    },
+    emptyTab: {
+      alignItems: 'center',
+      paddingVertical: spacing['3xl'],
+      gap: spacing.sm,
+    },
+    emptyIcon: {
+      width: 64,
+      height: 64,
+      borderRadius: 32,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: spacing.sm,
+    },
+    emptyTitle: {
+      ...typography.bodyStrong,
+      color: colors.text,
+    },
+    emptyHint: {
+      ...typography.caption,
+      color: colors.textMuted,
+      textAlign: 'center',
+      maxWidth: 260,
+    },
+    emptyAction: {
+      marginTop: spacing.md,
+      paddingHorizontal: spacing.xl,
+      paddingVertical: spacing.sm,
+      borderRadius: radius.pill,
+      backgroundColor: colors.accentMuted,
+    },
+    emptyActionText: {
+      ...typography.caption,
+      color: colors.accent,
+      fontWeight: '700',
+    },
+    signingOut: {
+      ...StyleSheet.absoluteFill,
+      backgroundColor: 'rgba(11,11,15,0.6)',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    bottomSpace: {
+      height: spacing['3xl'],
+    },
+  });

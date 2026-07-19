@@ -1,6 +1,6 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   Alert,
   Pressable,
@@ -17,17 +17,22 @@ import type { ClimbOutcome } from '../src/api/types';
 import { Button } from '../src/components/Button';
 import { Icon, type IconName } from '../src/components/Icon';
 import { NavHeader } from '../src/components/NavHeader';
-import { gradeColor, colors, gradients, radius, spacing, typography } from '../src/theme';
+import { gradeColor, gradients, radius, spacing, typography, useTheme, type SemanticColors } from '../src/theme';
 
 const GRADES = ['V0', 'V1', 'V2', 'V3', 'V4', 'V5', 'V6', 'V7'];
-const OUTCOMES: { key: ClimbOutcome; label: string; icon: IconName; color: string }[] = [
-  { key: 'flash', label: 'Flash', icon: 'flash', color: colors.cyan },
-  { key: 'send', label: 'Send', icon: 'trophy', color: colors.success },
-  { key: 'project', label: 'Project', icon: 'construct', color: colors.warning },
-];
 
 export default function LogScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const outcomes = useMemo(
+    (): { key: ClimbOutcome; label: string; icon: IconName; color: string }[] => [
+      { key: 'flash', label: 'Flash', icon: 'flash', color: colors.cyan },
+      { key: 'send', label: 'Send', icon: 'trophy', color: colors.success },
+      { key: 'project', label: 'Project', icon: 'construct', color: colors.warning },
+    ],
+    [colors],
+  );
   const params = useLocalSearchParams<{ routeId?: string; grade?: string }>();
   const { data: gyms } = useGyms();
   const { data: profile } = useProfile();
@@ -134,7 +139,7 @@ export default function LogScreen() {
 
         <Text style={styles.label}>Outcome</Text>
         <View style={styles.outcomeRow}>
-          {OUTCOMES.map((o) => {
+          {outcomes.map((o) => {
             const active = outcome === o.key;
             return (
               <Pressable
@@ -207,171 +212,172 @@ export default function LogScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: colors.bg,
-  },
-  headerPad: {
-    paddingHorizontal: spacing.xl,
-  },
-  content: {
-    paddingHorizontal: spacing.xl,
-    paddingBottom: spacing['2xl'],
-    gap: spacing.sm,
-  },
-  scanCard: {
-    borderRadius: radius.xl,
-    padding: spacing.xl,
-    alignItems: 'center',
-    gap: 6,
-    marginTop: spacing.sm,
-  },
-  scanFrame: {
-    width: 76,
-    height: 76,
-    borderRadius: radius.lg,
-    borderWidth: 2,
-    borderColor: 'rgba(11,11,15,0.4)',
-    backgroundColor: 'rgba(11,11,15,0.12)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.sm,
-  },
-  scanTitle: {
-    ...typography.h2,
-    color: colors.bg,
-  },
-  scanSub: {
-    ...typography.caption,
-    color: 'rgba(11,11,15,0.72)',
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  orRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    marginVertical: spacing.lg,
-  },
-  orLine: {
-    flex: 1,
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: colors.border,
-  },
-  orText: {
-    ...typography.caption,
-    color: colors.textSubtle,
-  },
-  label: {
-    ...typography.overline,
-    color: colors.textMuted,
-    marginTop: spacing.lg,
-    marginBottom: spacing.sm,
-  },
-  gradeRow: {
-    gap: spacing.sm,
-    paddingVertical: 2,
-  },
-  gradePill: {
-    width: 52,
-    height: 52,
-    borderRadius: radius.md,
-    borderWidth: 1.5,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  gradePillText: {
-    ...typography.bodyStrong,
-    fontWeight: '800',
-  },
-  outcomeRow: {
-    flexDirection: 'row',
-    gap: spacing.md,
-  },
-  outcome: {
-    flex: 1,
-    alignItems: 'center',
-    gap: 6,
-    paddingVertical: spacing.lg,
-    borderRadius: radius.md,
-    backgroundColor: colors.surface,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-  },
-  outcomeText: {
-    ...typography.caption,
-    color: colors.textMuted,
-    fontWeight: '700',
-  },
-  stepper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.sm,
-  },
-  stepBtn: {
-    width: 48,
-    height: 44,
-    borderRadius: radius.sm,
-    backgroundColor: colors.surfaceMuted,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  stepValue: {
-    ...typography.h2,
-    color: colors.text,
-  },
-  selectRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingHorizontal: spacing.lg,
-    height: 52,
-  },
-  selectText: {
-    ...typography.body,
-    color: colors.text,
-  },
-  notes: {
-    ...typography.body,
-    color: colors.text,
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.lg,
-    minHeight: 88,
-    textAlignVertical: 'top',
-  },
-  mediaAdd: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    borderRadius: radius.md,
-    borderWidth: 1.5,
-    borderStyle: 'dashed',
-    borderColor: colors.borderStrong,
-    paddingVertical: spacing.lg,
-    marginTop: spacing.lg,
-  },
-  mediaAddText: {
-    ...typography.bodyStrong,
-    color: colors.accent,
-  },
-  footer: {
-    paddingHorizontal: spacing.xl,
-    paddingTop: spacing.md,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
-  },
-});
+const createStyles = (colors: SemanticColors) =>
+  StyleSheet.create({
+    safe: {
+      flex: 1,
+      backgroundColor: colors.bg,
+    },
+    headerPad: {
+      paddingHorizontal: spacing.xl,
+    },
+    content: {
+      paddingHorizontal: spacing.xl,
+      paddingBottom: spacing['2xl'],
+      gap: spacing.sm,
+    },
+    scanCard: {
+      borderRadius: radius.xl,
+      padding: spacing.xl,
+      alignItems: 'center',
+      gap: 6,
+      marginTop: spacing.sm,
+    },
+    scanFrame: {
+      width: 76,
+      height: 76,
+      borderRadius: radius.lg,
+      borderWidth: 2,
+      borderColor: 'rgba(11,11,15,0.4)',
+      backgroundColor: 'rgba(11,11,15,0.12)',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: spacing.sm,
+    },
+    scanTitle: {
+      ...typography.h2,
+      color: colors.bg,
+    },
+    scanSub: {
+      ...typography.caption,
+      color: 'rgba(11,11,15,0.72)',
+      fontWeight: '600',
+      textAlign: 'center',
+    },
+    orRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
+      marginVertical: spacing.lg,
+    },
+    orLine: {
+      flex: 1,
+      height: StyleSheet.hairlineWidth,
+      backgroundColor: colors.border,
+    },
+    orText: {
+      ...typography.caption,
+      color: colors.textSubtle,
+    },
+    label: {
+      ...typography.overline,
+      color: colors.textMuted,
+      marginTop: spacing.lg,
+      marginBottom: spacing.sm,
+    },
+    gradeRow: {
+      gap: spacing.sm,
+      paddingVertical: 2,
+    },
+    gradePill: {
+      width: 52,
+      height: 52,
+      borderRadius: radius.md,
+      borderWidth: 1.5,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    gradePillText: {
+      ...typography.bodyStrong,
+      fontWeight: '800',
+    },
+    outcomeRow: {
+      flexDirection: 'row',
+      gap: spacing.md,
+    },
+    outcome: {
+      flex: 1,
+      alignItems: 'center',
+      gap: 6,
+      paddingVertical: spacing.lg,
+      borderRadius: radius.md,
+      backgroundColor: colors.surface,
+      borderWidth: 1.5,
+      borderColor: colors.border,
+    },
+    outcomeText: {
+      ...typography.caption,
+      color: colors.textMuted,
+      fontWeight: '700',
+    },
+    stepper: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: colors.surface,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: spacing.sm,
+    },
+    stepBtn: {
+      width: 48,
+      height: 44,
+      borderRadius: radius.sm,
+      backgroundColor: colors.surfaceMuted,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    stepValue: {
+      ...typography.h2,
+      color: colors.text,
+    },
+    selectRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
+      backgroundColor: colors.surface,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+      paddingHorizontal: spacing.lg,
+      height: 52,
+    },
+    selectText: {
+      ...typography.body,
+      color: colors.text,
+    },
+    notes: {
+      ...typography.body,
+      color: colors.text,
+      backgroundColor: colors.surface,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: spacing.lg,
+      minHeight: 88,
+      textAlignVertical: 'top',
+    },
+    mediaAdd: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: spacing.sm,
+      borderRadius: radius.md,
+      borderWidth: 1.5,
+      borderStyle: 'dashed',
+      borderColor: colors.borderStrong,
+      paddingVertical: spacing.lg,
+      marginTop: spacing.lg,
+    },
+    mediaAddText: {
+      ...typography.bodyStrong,
+      color: colors.accent,
+    },
+    footer: {
+      paddingHorizontal: spacing.xl,
+      paddingTop: spacing.md,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: colors.border,
+    },
+  });

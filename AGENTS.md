@@ -28,4 +28,7 @@ This is an Expo SDK 56 + Expo Router + TypeScript app.
 
 - Strict TypeScript. Avoid `any`; prefer narrow types or `unknown` + refinement.
 - Functional components, hooks-first.
-- Co-locate styles via `StyleSheet.create` inside the same file as the component.
+- **NativeWind (Tailwind)** is the default for layout and static styling via `className`. Brand accent is the generic `orange` scale (`orange-main`, `orange-50`…`orange-950`) in `src/theme/orange.js` + `tailwind.config.js`.
+- Semantic surfaces (`bg-bg`, `text-text`, `bg-accent`) are CSS variables set by `ThemeProvider`, which follows the **device light/dark setting** by default.
+- For StyleSheet / imperative colors, use `useTheme().colors` (or `useThemedStyles`) so light/dark updates apply. Do not bake static `colors` into module-level StyleSheets.
+- Prefer token utilities over hardcoded hex values.

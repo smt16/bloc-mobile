@@ -1,6 +1,6 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -19,11 +19,13 @@ import { Card } from '../../src/components/Card';
 import { GradeChip } from '../../src/components/GradeChip';
 import { Icon, type IconName } from '../../src/components/Icon';
 import { IconButton } from '../../src/components/IconButton';
-import { colors, radius, spacing, typography } from '../../src/theme';
+import { radius, spacing, typography, useTheme, type SemanticColors } from '../../src/theme';
 
 export default function RouteDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { data: route, isLoading } = useRoute(id);
 
   if (isLoading || !route) {
@@ -198,198 +200,203 @@ const StatBox: React.FC<{ icon: IconName; value: string; label: string }> = ({
   icon,
   value,
   label,
-}) => (
-  <Card style={styles.statBox}>
-    <Icon name={icon} size={18} color={colors.textMuted} />
-    <Text style={styles.statValue}>{value}</Text>
-    <Text style={styles.statLabel}>{label}</Text>
-  </Card>
-);
+}) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  return (
+    <Card style={styles.statBox}>
+      <Icon name={icon} size={18} color={colors.textMuted} />
+      <Text style={styles.statValue}>{value}</Text>
+      <Text style={styles.statLabel}>{label}</Text>
+    </Card>
+  );
+};
 
-const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: colors.bg,
-  },
-  center: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  notFound: {
-    ...typography.body,
-    color: colors.textMuted,
-  },
-  content: {
-    paddingBottom: spacing['2xl'],
-  },
-  hero: {
-    paddingHorizontal: spacing.xl,
-    paddingBottom: spacing.xl,
-  },
-  heroTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingTop: spacing.sm,
-  },
-  heroBody: {
-    gap: spacing.sm,
-    marginTop: spacing['3xl'],
-  },
-  routeName: {
-    ...typography.display,
-    color: colors.text,
-    fontSize: 36,
-  },
-  routeMetaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  routeMeta: {
-    ...typography.body,
-    color: colors.textMuted,
-  },
-  tags: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    marginTop: spacing.sm,
-  },
-  tag: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 6,
-  },
-  tagText: {
-    ...typography.caption,
-    color: colors.textMuted,
-  },
-  padded: {
-    paddingHorizontal: spacing.xl,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    gap: spacing.md,
-    marginTop: spacing.lg,
-  },
-  statBox: {
-    flex: 1,
-    alignItems: 'center',
-    gap: 4,
-  },
-  statValue: {
-    ...typography.h2,
-    color: colors.text,
-  },
-  statLabel: {
-    ...typography.caption,
-    color: colors.textSubtle,
-  },
-  setterCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    marginTop: spacing.lg,
-  },
-  setterCopy: {
-    gap: 2,
-  },
-  setterLabel: {
-    ...typography.caption,
-    color: colors.textSubtle,
-  },
-  setterName: {
-    ...typography.bodyStrong,
-    color: colors.text,
-  },
-  setterNote: {
-    ...typography.caption,
-    color: colors.textMuted,
-    fontStyle: 'italic',
-    flex: 1,
-    textAlign: 'right',
-  },
-  section: {
-    marginTop: spacing['2xl'],
-    gap: spacing.md,
-  },
-  sectionTitle: {
-    ...typography.h2,
-    color: colors.text,
-  },
-  betaRow: {
-    gap: spacing.md,
-  },
-  betaCard: {
-    width: 130,
-    gap: spacing.sm,
-  },
-  betaThumb: {
-    width: 130,
-    height: 180,
-    borderRadius: radius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  betaPlay: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(11,11,15,0.45)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  betaMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  betaName: {
-    ...typography.caption,
-    color: colors.textMuted,
-  },
-  sendersHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  comments: {
-    gap: spacing.md,
-  },
-  comment: {
-    flexDirection: 'row',
-    gap: spacing.md,
-  },
-  commentBubble: {
-    flex: 1,
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    gap: 2,
-  },
-  commentTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  commentName: {
-    ...typography.caption,
-    color: colors.text,
-    fontWeight: '700',
-  },
-  commentTime: {
-    ...typography.caption,
-    color: colors.textSubtle,
-  },
-  commentText: {
-    ...typography.body,
-    color: colors.textMuted,
-  },
-  footer: {
-    paddingHorizontal: spacing.xl,
-    paddingTop: spacing.md,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
-  },
-});
+const createStyles = (colors: SemanticColors) =>
+  StyleSheet.create({
+    safe: {
+      flex: 1,
+      backgroundColor: colors.bg,
+    },
+    center: {
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    notFound: {
+      ...typography.body,
+      color: colors.textMuted,
+    },
+    content: {
+      paddingBottom: spacing['2xl'],
+    },
+    hero: {
+      paddingHorizontal: spacing.xl,
+      paddingBottom: spacing.xl,
+    },
+    heroTop: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      paddingTop: spacing.sm,
+    },
+    heroBody: {
+      gap: spacing.sm,
+      marginTop: spacing['3xl'],
+    },
+    routeName: {
+      ...typography.display,
+      color: colors.text,
+      fontSize: 36,
+    },
+    routeMetaRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
+    routeMeta: {
+      ...typography.body,
+      color: colors.textMuted,
+    },
+    tags: {
+      flexDirection: 'row',
+      gap: spacing.sm,
+      marginTop: spacing.sm,
+    },
+    tag: {
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: radius.pill,
+      paddingHorizontal: spacing.md,
+      paddingVertical: 6,
+    },
+    tagText: {
+      ...typography.caption,
+      color: colors.textMuted,
+    },
+    padded: {
+      paddingHorizontal: spacing.xl,
+    },
+    statsRow: {
+      flexDirection: 'row',
+      gap: spacing.md,
+      marginTop: spacing.lg,
+    },
+    statBox: {
+      flex: 1,
+      alignItems: 'center',
+      gap: 4,
+    },
+    statValue: {
+      ...typography.h2,
+      color: colors.text,
+    },
+    statLabel: {
+      ...typography.caption,
+      color: colors.textSubtle,
+    },
+    setterCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
+      marginTop: spacing.lg,
+    },
+    setterCopy: {
+      gap: 2,
+    },
+    setterLabel: {
+      ...typography.caption,
+      color: colors.textSubtle,
+    },
+    setterName: {
+      ...typography.bodyStrong,
+      color: colors.text,
+    },
+    setterNote: {
+      ...typography.caption,
+      color: colors.textMuted,
+      fontStyle: 'italic',
+      flex: 1,
+      textAlign: 'right',
+    },
+    section: {
+      marginTop: spacing['2xl'],
+      gap: spacing.md,
+    },
+    sectionTitle: {
+      ...typography.h2,
+      color: colors.text,
+    },
+    betaRow: {
+      gap: spacing.md,
+    },
+    betaCard: {
+      width: 130,
+      gap: spacing.sm,
+    },
+    betaThumb: {
+      width: 130,
+      height: 180,
+      borderRadius: radius.md,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    betaPlay: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: 'rgba(11,11,15,0.45)',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    betaMeta: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
+    betaName: {
+      ...typography.caption,
+      color: colors.textMuted,
+    },
+    sendersHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    comments: {
+      gap: spacing.md,
+    },
+    comment: {
+      flexDirection: 'row',
+      gap: spacing.md,
+    },
+    commentBubble: {
+      flex: 1,
+      backgroundColor: colors.surface,
+      borderRadius: radius.md,
+      padding: spacing.md,
+      gap: 2,
+    },
+    commentTop: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+    },
+    commentName: {
+      ...typography.caption,
+      color: colors.text,
+      fontWeight: '700',
+    },
+    commentTime: {
+      ...typography.caption,
+      color: colors.textSubtle,
+    },
+    commentText: {
+      ...typography.body,
+      color: colors.textMuted,
+    },
+    footer: {
+      paddingHorizontal: spacing.xl,
+      paddingTop: spacing.md,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: colors.border,
+    },
+  });

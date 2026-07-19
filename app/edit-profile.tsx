@@ -24,7 +24,7 @@ import {
   GRADE_OPTIONS,
   STYLE_TAG_OPTIONS,
 } from '../src/profile/constants';
-import { colors, radius, spacing, typography } from '../src/theme';
+import { orange, radius, spacing, typography, useTheme, type SemanticColors } from '../src/theme';
 
 type FormState = {
   name: string;
@@ -44,7 +44,7 @@ const emptyForm: FormState = {
   bio: '',
   homeGymId: null,
   topGrade: 'V4',
-  avatarColor: colors.accent,
+  avatarColor: orange.main,
   styleTags: [],
   privacy: 'public',
   pictureUrl: null,
@@ -56,7 +56,7 @@ const profileToForm = (profile: NonNullable<ReturnType<typeof useProfile>['data'
   bio: profile.bio ?? '',
   homeGymId: profile.homeGym?.id ?? null,
   topGrade: profile.topGrade ?? 'V4',
-  avatarColor: profile.avatarColor ?? colors.accent,
+  avatarColor: profile.avatarColor ?? orange.main,
   styleTags: profile.styleTags ?? [],
   privacy: profile.privacy ?? 'public',
   pictureUrl: profile.pictureUrl ?? null,
@@ -76,6 +76,8 @@ const formToPayload = (form: FormState): UpdateProfileInput => ({
 
 export default function EditProfileScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { data: profile, isLoading } = useProfile();
   const { data: gyms } = useGyms();
   const update = useUpdateProfile();
@@ -356,172 +358,177 @@ export default function EditProfileScreen() {
 const Field: React.FC<{ label: string; children: React.ReactNode }> = ({
   label,
   children,
-}) => (
-  <View style={styles.field}>
-    <Text style={styles.fieldLabel}>{label}</Text>
-    {children}
-  </View>
-);
+}) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  return (
+    <View style={styles.field}>
+      <Text style={styles.fieldLabel}>{label}</Text>
+      {children}
+    </View>
+  );
+};
 
-const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: colors.bg,
-  },
-  center: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-  },
-  topAction: {
-    width: 72,
-    alignItems: 'center',
-  },
-  topTitle: {
-    ...typography.bodyStrong,
-    color: colors.text,
-    flex: 1,
-    textAlign: 'center',
-  },
-  cancelText: {
-    ...typography.body,
-    color: colors.text,
-  },
-  doneText: {
-    ...typography.bodyStrong,
-    color: colors.accent,
-  },
-  doneDisabled: {
-    opacity: 0.35,
-  },
-  scroll: {
-    paddingHorizontal: spacing.xl,
-    paddingBottom: spacing['3xl'],
-  },
-  photoBlock: {
-    alignItems: 'center',
-    gap: spacing.sm,
-    paddingVertical: spacing['2xl'],
-  },
-  changePhotoBtn: {
-    marginTop: spacing.sm,
-  },
-  changePhotoText: {
-    ...typography.bodyStrong,
-    color: colors.accent,
-  },
-  removePhotoText: {
-    ...typography.caption,
-    color: colors.textMuted,
-  },
-  field: {
-    marginBottom: spacing.xl,
-    gap: spacing.sm,
-  },
-  fieldLabel: {
-    ...typography.caption,
-    color: colors.textMuted,
-    fontWeight: '600',
-  },
-  input: {
-    ...typography.body,
-    color: colors.text,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-  },
-  handleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    paddingLeft: spacing.lg,
-  },
-  handlePrefix: {
-    ...typography.body,
-    color: colors.textMuted,
-  },
-  handleInput: {
-    flex: 1,
-    borderWidth: 0,
-    backgroundColor: 'transparent',
-    paddingLeft: spacing.xs,
-  },
-  bioInput: {
-    minHeight: 96,
-    textAlignVertical: 'top',
-    paddingTop: spacing.md,
-  },
-  charCount: {
-    ...typography.caption,
-    color: colors.textSubtle,
-    textAlign: 'right',
-  },
-  selectRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-  },
-  selectText: {
-    ...typography.body,
-    color: colors.text,
-  },
-  chipWrap: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-  },
-  colorRow: {
-    flexDirection: 'row',
-    gap: spacing.md,
-  },
-  colorSwatch: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  colorSwatchActive: {
-    borderColor: colors.text,
-  },
-  switchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.lg,
-    paddingVertical: spacing.lg,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
-    marginTop: spacing.sm,
-  },
-  switchCopy: {
-    flex: 1,
-    gap: 4,
-  },
-  switchLabel: {
-    ...typography.bodyStrong,
-    color: colors.text,
-  },
-  switchHint: {
-    ...typography.caption,
-    color: colors.textMuted,
-  },
-});
+const createStyles = (colors: SemanticColors) =>
+  StyleSheet.create({
+    safe: {
+      flex: 1,
+      backgroundColor: colors.bg,
+    },
+    center: {
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    topBar: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.md,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: colors.border,
+    },
+    topAction: {
+      width: 72,
+      alignItems: 'center',
+    },
+    topTitle: {
+      ...typography.bodyStrong,
+      color: colors.text,
+      flex: 1,
+      textAlign: 'center',
+    },
+    cancelText: {
+      ...typography.body,
+      color: colors.text,
+    },
+    doneText: {
+      ...typography.bodyStrong,
+      color: colors.accent,
+    },
+    doneDisabled: {
+      opacity: 0.35,
+    },
+    scroll: {
+      paddingHorizontal: spacing.xl,
+      paddingBottom: spacing['3xl'],
+    },
+    photoBlock: {
+      alignItems: 'center',
+      gap: spacing.sm,
+      paddingVertical: spacing['2xl'],
+    },
+    changePhotoBtn: {
+      marginTop: spacing.sm,
+    },
+    changePhotoText: {
+      ...typography.bodyStrong,
+      color: colors.accent,
+    },
+    removePhotoText: {
+      ...typography.caption,
+      color: colors.textMuted,
+    },
+    field: {
+      marginBottom: spacing.xl,
+      gap: spacing.sm,
+    },
+    fieldLabel: {
+      ...typography.caption,
+      color: colors.textMuted,
+      fontWeight: '600',
+    },
+    input: {
+      ...typography.body,
+      color: colors.text,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: radius.md,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.md,
+    },
+    handleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: radius.md,
+      paddingLeft: spacing.lg,
+    },
+    handlePrefix: {
+      ...typography.body,
+      color: colors.textMuted,
+    },
+    handleInput: {
+      flex: 1,
+      borderWidth: 0,
+      backgroundColor: 'transparent',
+      paddingLeft: spacing.xs,
+    },
+    bioInput: {
+      minHeight: 96,
+      textAlignVertical: 'top',
+      paddingTop: spacing.md,
+    },
+    charCount: {
+      ...typography.caption,
+      color: colors.textSubtle,
+      textAlign: 'right',
+    },
+    selectRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: radius.md,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.md,
+    },
+    selectText: {
+      ...typography.body,
+      color: colors.text,
+    },
+    chipWrap: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: spacing.sm,
+    },
+    colorRow: {
+      flexDirection: 'row',
+      gap: spacing.md,
+    },
+    colorSwatch: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      borderWidth: 2,
+      borderColor: 'transparent',
+    },
+    colorSwatchActive: {
+      borderColor: colors.text,
+    },
+    switchRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.lg,
+      paddingVertical: spacing.lg,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: colors.border,
+      marginTop: spacing.sm,
+    },
+    switchCopy: {
+      flex: 1,
+      gap: 4,
+    },
+    switchLabel: {
+      ...typography.bodyStrong,
+      color: colors.text,
+    },
+    switchHint: {
+      ...typography.caption,
+      color: colors.textMuted,
+    },
+  });

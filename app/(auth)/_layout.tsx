@@ -1,16 +1,17 @@
 import { Redirect, Stack } from 'expo-router';
 import React from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
 
 import { useAuth } from '../../src/auth/AuthContext';
-import { colors } from '../../src/theme';
+import { useTheme } from '../../src/theme';
 
 export default function AuthLayout() {
   const { status } = useAuth();
+  const { colors } = useTheme();
 
   if (status === 'loading') {
     return (
-      <View style={styles.center}>
+      <View className="flex-1 items-center justify-center bg-bg">
         <ActivityIndicator color={colors.accent} />
       </View>
     );
@@ -29,12 +30,3 @@ export default function AuthLayout() {
     />
   );
 }
-
-const styles = StyleSheet.create({
-  center: {
-    flex: 1,
-    backgroundColor: colors.bg,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});

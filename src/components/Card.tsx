@@ -1,28 +1,31 @@
 import React from 'react';
-import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import { View, type StyleProp, type ViewStyle } from 'react-native';
 
-import { colors, radius, spacing } from '../theme';
+import { cn } from '../theme';
 
 type Props = {
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
   padded?: boolean;
+  className?: string;
 };
 
-export const Card: React.FC<Props> = ({ children, style, padded = true }) => {
+export const Card: React.FC<Props> = ({
+  children,
+  style,
+  padded = true,
+  className,
+}) => {
   return (
-    <View style={[styles.card, padded && styles.padded, style]}>{children}</View>
+    <View
+      className={cn(
+        'rounded-lg border border-border bg-surface',
+        padded && 'p-lg',
+        className,
+      )}
+      style={style}
+    >
+      {children}
+    </View>
   );
 };
-
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  padded: {
-    padding: spacing.lg,
-  },
-});

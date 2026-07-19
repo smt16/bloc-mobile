@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { colors, typography } from '../theme';
+import { typography, useTheme, type SemanticColors } from '../theme';
 
 type Props = {
   colors: string[];
@@ -17,6 +17,8 @@ export const AvatarStack: React.FC<Props> = ({
   max = 4,
   extra,
 }) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const shown = bubbleColors.slice(0, max);
   const overflow = extra ?? Math.max(0, bubbleColors.length - max);
 
@@ -60,23 +62,24 @@ export const AvatarStack: React.FC<Props> = ({
   );
 };
 
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  bubble: {
-    borderWidth: 2,
-    borderColor: colors.bg,
-  },
-  overflow: {
-    backgroundColor: colors.surfaceMuted,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  overflowText: {
-    ...typography.caption,
-    color: colors.textMuted,
-    fontWeight: '700',
-  },
-});
+const createStyles = (colors: SemanticColors) =>
+  StyleSheet.create({
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    bubble: {
+      borderWidth: 2,
+      borderColor: colors.bg,
+    },
+    overflow: {
+      backgroundColor: colors.surfaceMuted,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    overflowText: {
+      ...typography.caption,
+      color: colors.textMuted,
+      fontWeight: '700',
+    },
+  });

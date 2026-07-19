@@ -1,7 +1,6 @@
 import React from 'react';
 import {
   ScrollView,
-  StyleSheet,
   View,
   type ScrollViewProps,
   type StyleProp,
@@ -9,7 +8,7 @@ import {
 } from 'react-native';
 import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
 
-import { colors, spacing } from '../theme';
+import { cn } from '../theme';
 
 type Props = {
   children: React.ReactNode;
@@ -17,8 +16,10 @@ type Props = {
   padded?: boolean;
   edges?: Edge[];
   contentContainerStyle?: StyleProp<ViewStyle>;
-  scrollViewProps?: Omit<ScrollViewProps, 'contentContainerStyle'>;
+  contentContainerClassName?: string;
+  scrollViewProps?: Omit<ScrollViewProps, 'contentContainerStyle' | 'contentContainerClassName'>;
   style?: StyleProp<ViewStyle>;
+  className?: string;
 };
 
 export const Screen: React.FC<Props> = ({
@@ -27,40 +28,34 @@ export const Screen: React.FC<Props> = ({
   padded = true,
   edges = ['top', 'left', 'right', 'bottom'],
   contentContainerStyle,
+  contentContainerClassName,
   scrollViewProps,
   style,
+  className,
 }) => {
-  const innerStyle: ViewStyle = padded ? styles.padded : styles.unpadded;
+  const innerClassName = cn(
+    scroll ? 'grow' : 'flex-1',
+    padded && 'px-xl py-lg',
+    contentContainerClassName,
+  );
 
   return (
-    <SafeAreaView style={[styles.safe, style]} edges={edges}>
+    <SafeAreaView className={cn('flex-1 bg-bg', className)} style={style} edges={edges}>
       {scroll ? (
         <ScrollView
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
           {...scrollViewProps}
-          contentContainerStyle={[innerStyle, contentContainerStyle]}
+          contentContainerClassName={innerClassName}
+          contentContainerStyle={contentContainerStyle}
         >
           {children}
         </ScrollView>
       ) : (
-        <View style={[innerStyle, contentContainerStyle]}>{children}</View>
+        <View className={innerClassName} style={contentContainerStyle}>
+          {children}
+        </View>
       )}
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: colors.bg,
-  },
-  padded: {
-    flexGrow: 1,
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.lg,
-  },
-  unpadded: {
-    flexGrow: 1,
-  },
-});

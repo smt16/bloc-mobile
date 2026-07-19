@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { ReactionType } from '../api/types';
-import { colors, radius, spacing, typography } from '../theme';
+import { radius, spacing, typography, useTheme, type SemanticColors } from '../theme';
 import { Icon, type IconName } from './Icon';
 
 type Props = {
@@ -12,17 +12,6 @@ type Props = {
   onReact?: (type: ReactionType) => void;
 };
 
-const REACTIONS: {
-  key: ReactionType;
-  icon: IconName;
-  color: string;
-  label: string;
-}[] = [
-  { key: 'fire', icon: 'flame', color: colors.accent, label: 'Fire' },
-  { key: 'strong', icon: 'barbell', color: colors.purple, label: 'Strong' },
-  { key: 'clap', icon: 'hand-left', color: colors.cyan, label: 'Respect' },
-];
-
 /** Climbing-native encouragement bar — fire / strong / respect + comments. */
 export const ReactionBar: React.FC<Props> = ({
   reactions,
@@ -30,6 +19,20 @@ export const ReactionBar: React.FC<Props> = ({
   reactedByMe,
   onReact,
 }) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
+  const reactionMeta: {
+    key: ReactionType;
+    icon: IconName;
+    color: string;
+    label: string;
+  }[] = [
+    { key: 'fire', icon: 'flame', color: colors.accent, label: 'Fire' },
+    { key: 'strong', icon: 'barbell', color: colors.purple, label: 'Strong' },
+    { key: 'clap', icon: 'hand-left', color: colors.cyan, label: 'Respect' },
+  ];
+
   const [mine, setMine] = useState<ReactionType | undefined>(
     reactedByMe ?? undefined,
   );
@@ -48,7 +51,7 @@ export const ReactionBar: React.FC<Props> = ({
 
   return (
     <View style={styles.row}>
-      {REACTIONS.map((r) => {
+      {reactionMeta.map((r) => {
         const active = mine === r.key;
         return (
           <Pressable
@@ -78,29 +81,30 @@ export const ReactionBar: React.FC<Props> = ({
   );
 };
 
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  pill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 7,
-    borderRadius: radius.pill,
-    backgroundColor: colors.surfaceMuted,
-    borderWidth: 1,
-    borderColor: 'transparent',
-  },
-  count: {
-    ...typography.caption,
-    color: colors.textMuted,
-    fontWeight: '700',
-  },
-  spacer: {
-    flex: 1,
-  },
-});
+const createStyles = (colors: SemanticColors) =>
+  StyleSheet.create({
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+    },
+    pill: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      paddingHorizontal: spacing.md,
+      paddingVertical: 7,
+      borderRadius: radius.pill,
+      backgroundColor: colors.surfaceMuted,
+      borderWidth: 1,
+      borderColor: 'transparent',
+    },
+    count: {
+      ...typography.caption,
+      color: colors.textMuted,
+      fontWeight: '700',
+    },
+    spacer: {
+      flex: 1,
+    },
+  });

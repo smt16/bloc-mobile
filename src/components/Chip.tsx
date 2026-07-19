@@ -1,14 +1,7 @@
 import React from 'react';
-import {
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-  type StyleProp,
-  type ViewStyle,
-} from 'react-native';
+import { Pressable, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 
-import { colors, radius, spacing, typography } from '../theme';
+import { cn, useTheme } from '../theme';
 import { Icon, type IconName } from './Icon';
 
 type Props = {
@@ -18,6 +11,7 @@ type Props = {
   tone?: string;
   onPress?: () => void;
   style?: StyleProp<ViewStyle>;
+  className?: string;
 };
 
 /** Pill-shaped tag / filter chip. */
@@ -28,54 +22,41 @@ export const Chip: React.FC<Props> = ({
   tone,
   onPress,
   style,
+  className,
 }) => {
+  const { colors } = useTheme();
   const accent = tone ?? colors.accent;
   const content = (
     <View
+      className={cn(
+        'flex-row items-center gap-xs rounded-pill border px-md py-[7px]',
+        className,
+      )}
       style={[
-        styles.chip,
-        active && { backgroundColor: accent, borderColor: accent },
+        active
+          ? { backgroundColor: accent, borderColor: accent }
+          : {
+              backgroundColor: colors.surface,
+              borderColor: colors.border,
+            },
         style,
       ]}
     >
       {icon ? (
         <Icon name={icon} size={14} color={active ? colors.bg : colors.textMuted} />
       ) : null}
-      <Text style={[styles.label, active && styles.labelActive]}>{label}</Text>
+      <Text className={cn('text-caption', active ? 'font-bold text-bg' : 'text-text-muted')}>
+        {label}
+      </Text>
     </View>
   );
 
   if (onPress) {
     return (
-      <Pressable onPress={onPress} style={({ pressed }) => (pressed ? styles.pressed : undefined)}>
+      <Pressable onPress={onPress} className="active:opacity-70">
         {content}
       </Pressable>
     );
   }
   return content;
 };
-
-const styles = StyleSheet.create({
-  chip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 7,
-    borderRadius: radius.pill,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  label: {
-    ...typography.caption,
-    color: colors.textMuted,
-  },
-  labelActive: {
-    color: colors.bg,
-    fontWeight: '700',
-  },
-  pressed: {
-    opacity: 0.7,
-  },
-});

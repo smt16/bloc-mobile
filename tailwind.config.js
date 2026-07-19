@@ -1,0 +1,85 @@
+const { orange } = require('./src/theme/orange.js');
+
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  content: ['./app/**/*.{js,jsx,ts,tsx}', './src/**/*.{js,jsx,ts,tsx}'],
+  presets: [require('nativewind/preset')],
+  darkMode: 'class',
+  theme: {
+    extend: {
+      colors: {
+        // Semantic tokens — values come from ThemeProvider CSS variables
+        bg: 'var(--color-bg)',
+        'bg-elevated': 'var(--color-bg-elevated)',
+        surface: 'var(--color-surface)',
+        'surface-muted': 'var(--color-surface-muted)',
+        'surface-hover': 'var(--color-surface-hover)',
+        border: 'var(--color-border)',
+        'border-strong': 'var(--color-border-strong)',
+        text: 'var(--color-text)',
+        'text-muted': 'var(--color-text-muted)',
+        'text-subtle': 'var(--color-text-subtle)',
+        accent: 'var(--color-accent)',
+        'accent-muted': 'var(--color-accent-muted)',
+        'accent-text': 'var(--color-accent-text)',
+        purple: 'var(--color-purple)',
+        'purple-muted': 'var(--color-purple-muted)',
+        cyan: 'var(--color-cyan)',
+        'cyan-muted': 'var(--color-cyan-muted)',
+        success: 'var(--color-success)',
+        'success-muted': 'var(--color-success-muted)',
+        warning: 'var(--color-warning)',
+        danger: 'var(--color-danger)',
+
+        // Brand orange scale (static; scheme-independent)
+        orange: {
+          50: orange[50],
+          100: orange[100],
+          200: orange[200],
+          300: orange[300],
+          400: orange[400],
+          500: orange[500],
+          600: orange[600],
+          700: orange[700],
+          800: orange[800],
+          900: orange[900],
+          950: orange[950],
+          main: orange.main,
+          soft: orange.soft,
+          muted: orange.muted,
+          deep: orange.deep,
+          dark: orange.dark,
+          DEFAULT: orange.main,
+        },
+      },
+      spacing: {
+        xs: 4,
+        sm: 8,
+        md: 12,
+        lg: 16,
+        xl: 24,
+        '2xl': 32,
+        '3xl': 48,
+        '4xl': 72,
+      },
+      borderRadius: {
+        sm: 8,
+        md: 12,
+        lg: 16,
+        xl: 24,
+        pill: 999,
+      },
+      fontSize: {
+        // Use explicit px — bare numbers are treated as unitless line-height multipliers.
+        display: ['40px', { lineHeight: '44px', letterSpacing: '-1px', fontWeight: '700' }],
+        h1: ['28px', { lineHeight: '34px', letterSpacing: '-0.5px', fontWeight: '700' }],
+        h2: ['22px', { lineHeight: '28px', letterSpacing: '-0.3px', fontWeight: '600' }],
+        body: ['16px', { lineHeight: '22px', fontWeight: '400' }],
+        'body-strong': ['16px', { lineHeight: '22px', fontWeight: '600' }],
+        caption: ['13px', { lineHeight: '18px', letterSpacing: '0.2px', fontWeight: '500' }],
+        overline: ['11px', { lineHeight: '14px', letterSpacing: '1.4px', fontWeight: '700' }],
+      },
+    },
+  },
+  plugins: [],
+};

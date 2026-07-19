@@ -1,4 +1,4 @@
-import { colors } from '../theme';
+import { orange } from '../theme';
 
 export const STYLE_TAG_OPTIONS = [
   'Crimpy',
@@ -25,10 +25,10 @@ export const GRADE_OPTIONS = [
 ] as const;
 
 export const AVATAR_COLORS = [
-  colors.accent,
+  orange.main,
   '#FF3D77',
-  colors.cyan,
-  colors.purple,
-  colors.success,
+  '#2DD4BF',
+  '#A78BFA',
+  '#34D399',
   '#F2C94C',
 ] as const;
