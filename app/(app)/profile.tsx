@@ -1,18 +1,25 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { useRouter, type Href } from 'expo-router';
 import React, { useState } from 'react';
-import { Alert, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  Share,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 
 import { useProfile } from '../../src/api/hooks';
 import type { Achievement, Milestone } from '../../src/api/types';
 import { useAuth } from '../../src/auth/AuthContext';
 import { Avatar } from '../../src/components/Avatar';
-import { Button } from '../../src/components/Button';
 import { Card } from '../../src/components/Card';
 import { Icon, type IconName } from '../../src/components/Icon';
-import { IconButton } from '../../src/components/IconButton';
 import { Screen } from '../../src/components/Screen';
-import { SectionHeader } from '../../src/components/SectionHeader';
 import {
   colors,
   gradeColor,
@@ -22,6 +29,8 @@ import {
   typography,
 } from '../../src/theme';
 
+type ProfileTab = 'sends' | 'timeline' | 'achievements';
+
 const TONE: Record<Milestone['tone'], string> = {
   accent: colors.accent,
   purple: colors.purple,
@@ -29,10 +38,67 @@ const TONE: Record<Milestone['tone'], string> = {
   success: colors.success,
 };
 
+const TAB_META: { key: ProfileTab; icon: IconName; label: string }[] = [
+  { key: 'sends', icon: 'grid-outline', label: 'Sends' },
+  { key: 'timeline', icon: 'list-outline', label: 'Timeline' },
+  { key: 'achievements', icon: 'ribbon-outline', label: 'Badges' },
+];
+
 export default function ProfileScreen() {
   const { user, logout } = useAuth();
   const router = useRouter();
+  const { data: profile, isLoading, refetch, isRefetching } = useProfile();
+  const [tab, setTab] = useState<ProfileTab>('sends');
   const [signingOut, setSigningOut] = useState(false);
+
+  const displayName =
+    profile?.name ||
+    (typeof user?.name === 'string' && user.name) ||
+    (typeof user?.nickname === 'string' && user.nickname) ||
+    'Bloc climber';
+  const handle = profile?.handle ? `@${profile.handle}` : '@climber';
+  const picture =
+    profile?.pictureUrl ??
+    (typeof user?.picture === 'string' ? user.picture : undefined);
+  const initials = profile?.initials ?? displayName.charAt(0).toUpperCase();
+  const avatarColor = profile?.avatarColor ?? colors.accent;
+
+  const stats = profile?.stats ?? {
+    sends: 0,
+    flashes: 0,
+    sessions: 0,
+    crews: 0,
+    streak: 0,
+    hardest: null,
+  };
+  const gradePyramid = profile?.gradePyramid ?? [];
+  const timeline = profile?.timeline ?? [];
+  const achievements = profile?.achievements ?? [];
+  const homeGymName = profile?.homeGym?.name ?? null;
+  const peakGrade = stats.hardest ?? profile?.topGrade ?? '—';
+  const styleTags = profile?.styleTags ?? [];
+  const bio = profile?.bio?.trim() ?? '';
+
+  const maxSends = Math.max(1, ...gradePyramid.map((g) => g.sends));
+
+  const openMenu = () => {
+    Alert.alert('Account', undefined, [
+      {
+        text: 'Edit profile',
+        onPress: () => router.push('/edit-profile' as Href),
+      },
+      {
+        text: 'View logbook',
+        onPress: () => router.push('/sessions'),
+      },
+      {
+        text: 'Sign out',
+        style: 'destructive',
+        onPress: handleLogout,
+      },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  };
 
   const handleLogout = async () => {
     try {
@@ -48,160 +114,306 @@ export default function ProfileScreen() {
     }
   };
 
-  const { data: profile } = useProfile();
-
-  const displayName =
-    profile?.name ||
-    (typeof user?.name === 'string' && user.name) ||
-    (typeof user?.nickname === 'string' && user.nickname) ||
-    'Bloc climber';
-  const email =
-    profile?.email ??
-    (typeof user?.email === 'string' ? user.email : undefined);
-  const picture =
-    profile?.pictureUrl ??
-    (typeof user?.picture === 'string' ? user.picture : undefined);
-  const initial = displayName.charAt(0).toUpperCase();
-
-  const profileStats = profile?.stats ?? {
-    sends: 0,
-    flashes: 0,
-    sessions: 0,
-    crews: 0,
-    streak: 0,
-    hardest: null,
+  const shareProfile = async () => {
+    try {
+      await Share.share({
+        message: `Check out ${displayName} on Bloc — peak ${peakGrade}${homeGymName ? ` at ${homeGymName}` : ''}.`,
+      });
+    } catch {
+      // User dismissed
+    }
   };
-  const gradePyramid = profile?.gradePyramid ?? [];
-  const timeline = profile?.timeline ?? [];
-  const achievements = profile?.achievements ?? [];
-  const homeGymName = profile?.homeGym?.name ?? 'No home gym yet';
-  const peakGrade = profileStats.hardest ?? profile?.topGrade ?? '—';
 
-  const maxSends = Math.max(1, ...gradePyramid.map((g) => g.sends));
+  if (isLoading && !profile) {
+    return (
+      <Screen edges={['top']}>
+        <View style={styles.loader}>
+          <ActivityIndicator color={colors.accent} size="large" />
+        </View>
+      </Screen>
+    );
+  }
 
   return (
-    <Screen scroll padded={false} edges={['top']}>
-      <LinearGradient
-        colors={[colors.purpleMuted, 'rgba(11,11,15,0)']}
-        style={styles.heroGlow}
-      />
-
-      <View style={styles.headerActions}>
-        <IconButton name="share-outline" />
-        <IconButton name="settings-outline" />
+    <Screen
+      scroll
+      padded={false}
+      edges={['top']}
+      scrollViewProps={{
+        refreshControl: (
+          <RefreshControl
+            refreshing={isRefetching}
+            onRefresh={refetch}
+            tintColor={colors.accent}
+          />
+        ),
+      }}
+    >
+      <View style={styles.topBar}>
+        <View style={styles.topSide} />
+        <Text style={styles.username} numberOfLines={1}>
+          {handle}
+        </Text>
+        <Pressable onPress={openMenu} style={styles.topSide} hitSlop={8}>
+          <Icon name="menu-outline" size={24} color={colors.text} />
+        </Pressable>
       </View>
 
-      <View style={styles.header}>
+      <View style={styles.identityRow}>
         <Avatar
-          initials={initial}
+          initials={initials}
           uri={picture}
-          color={colors.accent}
-          size={92}
+          color={avatarColor}
+          size={86}
           gradientRing
         />
-        <Text style={styles.name}>{displayName}</Text>
-        <Text style={styles.handle}>
-          {email ?? '@climber'} · {homeGymName}
-        </Text>
-        <View style={styles.tagRow}>
-          <View style={styles.metaTag}>
-            <Icon name="trending-up" size={13} color={colors.accent} />
-            <Text style={styles.metaTagText}>Peak {peakGrade}</Text>
-          </View>
-          <View style={styles.metaTag}>
-            <Icon name="footsteps" size={13} color={colors.cyan} />
-            <Text style={styles.metaTagText}>Crimpy slabs</Text>
-          </View>
+        <View style={styles.statsCol}>
+          <StatCell value={`${stats.sends}`} label="Sends" />
+          <StatCell
+            value={`${stats.sessions}`}
+            label="Sessions"
+            onPress={() => router.push('/sessions')}
+          />
+          <StatCell value={`${stats.streak}d`} label="Streak" highlight />
         </View>
       </View>
 
-      <View style={styles.padded}>
-        <Card style={styles.statsCard}>
-          <StatCell label="Sends" value={`${profileStats.sends}`} />
-          <View style={styles.statDivider} />
-          <StatCell label="Sessions" value={`${profileStats.sessions}`} />
-          <View style={styles.statDivider} />
-          <StatCell label="Crews" value={`${profileStats.crews}`} />
-          <View style={styles.statDivider} />
-          <StatCell label="Streak" value={`${profileStats.streak}d`} highlight />
-        </Card>
-
-        <View style={styles.section}>
-          <SectionHeader title="Grade pyramid" action="Sessions" onAction={() => router.push('/sessions')} />
-          <Card style={styles.pyramid}>
-            {gradePyramid.map((g) => (
-              <View key={g.grade} style={styles.pyramidRow}>
-                <Text style={[styles.pyramidGrade, { color: gradeColor(g.grade) }]}>
-                  {g.grade}
-                </Text>
-                <View style={styles.pyramidTrack}>
-                  <View
-                    style={[
-                      styles.pyramidBar,
-                      {
-                        width: `${(g.sends / maxSends) * 100}%`,
-                        backgroundColor: gradeColor(g.grade),
-                      },
-                    ]}
-                  />
-                </View>
-                <Text style={styles.pyramidCount}>{g.sends}</Text>
+      <View style={styles.identityCopy}>
+        <Text style={styles.displayName}>{displayName}</Text>
+        {bio ? <Text style={styles.bio}>{bio}</Text> : null}
+        {homeGymName ? (
+          <View style={styles.metaLine}>
+            <Icon name="location-outline" size={14} color={colors.textMuted} />
+            <Text style={styles.metaText}>{homeGymName}</Text>
+          </View>
+        ) : null}
+        {styleTags.length > 0 ? (
+          <View style={styles.tagRow}>
+            {styleTags.map((tag) => (
+              <View key={tag} style={styles.styleTag}>
+                <Text style={styles.styleTagText}>{tag}</Text>
               </View>
             ))}
-          </Card>
-        </View>
-
-        <View style={styles.section}>
-          <SectionHeader title="Progression timeline" />
-          <Card style={styles.timeline}>
-            {timeline.map((m, i) => (
-              <TimelineRow key={m.id} milestone={m} last={i === timeline.length - 1} />
-            ))}
-          </Card>
-        </View>
-
-        <View style={styles.section}>
-          <SectionHeader title="Achievements" action="View all" />
-          <View style={styles.badgeGrid}>
-            {achievements.map((a) => (
-              <BadgeTile key={a.id} achievement={a} />
-            ))}
           </View>
-        </View>
-
-        <View style={styles.section}>
-          <SectionHeader title="Settings" />
-          <Card padded={false}>
-            <SettingRow icon="lock-closed-outline" label="Privacy" value="Public" />
-            <Divider />
-            <SettingRow icon="notifications-outline" label="Notifications" value="On" />
-            <Divider />
-            <SettingRow icon="help-buoy-outline" label="Support" value="" />
-          </Card>
-        </View>
-
-        <Button
-          label="Sign out"
-          variant="secondary"
-          loading={signingOut}
-          onPress={handleLogout}
-          leading={<Icon name="log-out-outline" size={18} color={colors.text} />}
-          style={styles.signOut}
-        />
-        <View style={styles.bottomSpace} />
+        ) : null}
       </View>
+
+      <View style={styles.actionRow}>
+        <Pressable
+          style={styles.actionBtn}
+          onPress={() => router.push('/edit-profile' as Href)}
+        >
+          <Text style={styles.actionBtnText}>Edit profile</Text>
+        </Pressable>
+        <Pressable style={styles.actionBtn} onPress={shareProfile}>
+          <Text style={styles.actionBtnText}>Share profile</Text>
+        </Pressable>
+      </View>
+
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.highlights}
+      >
+        <Highlight
+          icon="trending-up"
+          label="Peak"
+          value={peakGrade}
+          colors={gradients.brand}
+        />
+        <Highlight
+          icon="flame"
+          label="Streak"
+          value={`${stats.streak}d`}
+          colors={gradients.ember}
+        />
+        <Highlight
+          icon="flash"
+          label="Flashes"
+          value={`${stats.flashes}`}
+          colors={gradients.aurora}
+        />
+        {homeGymName ? (
+          <Highlight
+            icon="business-outline"
+            label="Home"
+            value={homeGymName.split(' ')[0]}
+            colors={gradients.send}
+          />
+        ) : null}
+      </ScrollView>
+
+      <View style={styles.tabBar}>
+        {TAB_META.map((t) => {
+          const active = tab === t.key;
+          return (
+            <Pressable
+              key={t.key}
+              style={styles.tabItem}
+              onPress={() => setTab(t.key)}
+            >
+              <Icon
+                name={t.icon}
+                size={22}
+                color={active ? colors.text : colors.textSubtle}
+              />
+              {active ? <View style={styles.tabIndicator} /> : null}
+            </Pressable>
+          );
+        })}
+      </View>
+
+      <View style={styles.tabContent}>
+        {tab === 'sends' ? (
+          gradePyramid.length === 0 ? (
+            <EmptyTab
+              icon="albums-outline"
+              title="No sends yet"
+              hint="Log your first climb and your grade pyramid will show up here."
+              action="Log a climb"
+              onAction={() => router.push('/log')}
+            />
+          ) : (
+            <Card style={styles.pyramid}>
+              {gradePyramid.map((g) => (
+                <View key={g.grade} style={styles.pyramidRow}>
+                  <Text
+                    style={[styles.pyramidGrade, { color: gradeColor(g.grade) }]}
+                  >
+                    {g.grade}
+                  </Text>
+                  <View style={styles.pyramidTrack}>
+                    <View
+                      style={[
+                        styles.pyramidBar,
+                        {
+                          width: `${(g.sends / maxSends) * 100}%`,
+                          backgroundColor: gradeColor(g.grade),
+                        },
+                      ]}
+                    />
+                  </View>
+                  <Text style={styles.pyramidCount}>{g.sends}</Text>
+                </View>
+              ))}
+            </Card>
+          )
+        ) : null}
+
+        {tab === 'timeline' ? (
+          timeline.length === 0 ? (
+            <EmptyTab
+              icon="time-outline"
+              title="No milestones yet"
+              hint="Send harder, climb often — your progression timeline builds itself."
+            />
+          ) : (
+            <Card style={styles.timeline}>
+              {timeline.map((m, i) => (
+                <TimelineRow
+                  key={m.id}
+                  milestone={m}
+                  last={i === timeline.length - 1}
+                />
+              ))}
+            </Card>
+          )
+        ) : null}
+
+        {tab === 'achievements' ? (
+          achievements.length === 0 ? (
+            <EmptyTab
+              icon="ribbon-outline"
+              title="No badges yet"
+              hint="Unlock achievements as you climb, streak, and explore gyms."
+            />
+          ) : (
+            <View style={styles.badgeGrid}>
+              {achievements.map((a) => (
+                <BadgeTile key={a.id} achievement={a} />
+              ))}
+            </View>
+          )
+        ) : null}
+      </View>
+
+      {signingOut ? (
+        <View style={styles.signingOut}>
+          <ActivityIndicator color={colors.accent} />
+        </View>
+      ) : null}
+
+      <View style={styles.bottomSpace} />
     </Screen>
   );
 }
 
-const StatCell: React.FC<{ label: string; value: string; highlight?: boolean }> = ({
-  label,
-  value,
-  highlight,
-}) => (
-  <View style={styles.statCell}>
-    <Text style={[styles.statValue, highlight && { color: colors.accent }]}>{value}</Text>
-    <Text style={styles.statLabel}>{label}</Text>
+const StatCell: React.FC<{
+  value: string;
+  label: string;
+  highlight?: boolean;
+  onPress?: () => void;
+}> = ({ value, label, highlight, onPress }) => {
+  const inner = (
+    <>
+      <Text style={[styles.statValue, highlight && { color: colors.accent }]}>
+        {value}
+      </Text>
+      <Text style={styles.statLabel}>{label}</Text>
+    </>
+  );
+  if (onPress) {
+    return (
+      <Pressable style={styles.statCell} onPress={onPress}>
+        {inner}
+      </Pressable>
+    );
+  }
+  return <View style={styles.statCell}>{inner}</View>;
+};
+
+const Highlight: React.FC<{
+  icon: IconName;
+  label: string;
+  value: string;
+  colors: readonly [string, string, ...string[]];
+}> = ({ icon, label, value, colors: gradient }) => (
+  <View style={styles.highlight}>
+    <LinearGradient
+      colors={gradient}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={styles.highlightRing}
+    >
+      <View style={styles.highlightInner}>
+        <Icon name={icon} size={20} color={colors.text} />
+      </View>
+    </LinearGradient>
+    <Text style={styles.highlightValue} numberOfLines={1}>
+      {value}
+    </Text>
+    <Text style={styles.highlightLabel}>{label}</Text>
+  </View>
+);
+
+const EmptyTab: React.FC<{
+  icon: IconName;
+  title: string;
+  hint: string;
+  action?: string;
+  onAction?: () => void;
+}> = ({ icon, title, hint, action, onAction }) => (
+  <View style={styles.emptyTab}>
+    <View style={styles.emptyIcon}>
+      <Icon name={icon} size={28} color={colors.textSubtle} />
+    </View>
+    <Text style={styles.emptyTitle}>{title}</Text>
+    <Text style={styles.emptyHint}>{hint}</Text>
+    {action && onAction ? (
+      <Pressable style={styles.emptyAction} onPress={onAction}>
+        <Text style={styles.emptyActionText}>{action}</Text>
+      </Pressable>
+    ) : null}
   </View>
 );
 
@@ -213,8 +425,17 @@ const TimelineRow: React.FC<{ milestone: Milestone; last: boolean }> = ({
   return (
     <View style={styles.tlRow}>
       <View style={styles.tlGutter}>
-        <View style={[styles.tlNode, { backgroundColor: `${tone}26`, borderColor: tone }]}>
-          <Icon name={(milestone.icon ?? 'trophy') as IconName} size={16} color={tone} />
+        <View
+          style={[
+            styles.tlNode,
+            { backgroundColor: `${tone}26`, borderColor: tone },
+          ]}
+        >
+          <Icon
+            name={(milestone.icon ?? 'trophy') as IconName}
+            size={16}
+            color={tone}
+          />
         </View>
         {!last ? <View style={styles.tlLine} /> : null}
       </View>
@@ -223,7 +444,9 @@ const TimelineRow: React.FC<{ milestone: Milestone; last: boolean }> = ({
           <Text style={styles.tlTitle}>{milestone.title}</Text>
           <Text style={styles.tlDate}>{milestone.date}</Text>
         </View>
-        <Text style={styles.tlDetail}>{milestone.detail}</Text>
+        {milestone.detail ? (
+          <Text style={styles.tlDetail}>{milestone.detail}</Text>
+        ) : null}
       </View>
     </View>
   );
@@ -236,7 +459,11 @@ const BadgeTile: React.FC<{ achievement: Achievement }> = ({ achievement }) => {
       <View
         style={[
           styles.badgeIcon,
-          { backgroundColor: achievement.earned ? `${tone}22` : colors.surfaceMuted },
+          {
+            backgroundColor: achievement.earned
+              ? `${tone}22`
+              : colors.surfaceMuted,
+          },
         ]}
       >
         <Icon
@@ -250,7 +477,10 @@ const BadgeTile: React.FC<{ achievement: Achievement }> = ({ achievement }) => {
         />
       </View>
       <Text
-        style={[styles.badgeLabel, !achievement.earned && { color: colors.textSubtle }]}
+        style={[
+          styles.badgeLabel,
+          !achievement.earned && { color: colors.textSubtle },
+        ]}
         numberOfLines={1}
       >
         {achievement.label}
@@ -259,104 +489,181 @@ const BadgeTile: React.FC<{ achievement: Achievement }> = ({ achievement }) => {
   );
 };
 
-const SettingRow: React.FC<{ icon: IconName; label: string; value: string }> = ({
-  icon,
-  label,
-  value,
-}) => (
-  <View style={styles.settingRow}>
-    <View style={styles.settingIcon}>
-      <Icon name={icon} size={18} color={colors.textMuted} />
-    </View>
-    <Text style={styles.settingLabel}>{label}</Text>
-    <View style={{ flex: 1 }} />
-    {value ? <Text style={styles.settingValue}>{value}</Text> : null}
-    <Icon name="chevron-forward" size={16} color={colors.textSubtle} />
-  </View>
-);
-
-const Divider: React.FC = () => <View style={styles.divider} />;
-
 const styles = StyleSheet.create({
-  heroGlow: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 280,
+  loader: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 320,
   },
-  headerActions: {
+  topBar: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: spacing.sm,
+    alignItems: 'center',
     paddingHorizontal: spacing.xl,
     paddingTop: spacing.sm,
+    paddingBottom: spacing.md,
   },
-  header: {
-    alignItems: 'center',
-    gap: spacing.xs,
-    paddingHorizontal: spacing.xl,
-    marginTop: spacing.sm,
-    marginBottom: spacing.xl,
+  topSide: {
+    width: 40,
+    alignItems: 'flex-end',
   },
-  name: {
-    ...typography.h1,
+  username: {
+    ...typography.bodyStrong,
     color: colors.text,
-    marginTop: spacing.md,
+    flex: 1,
+    textAlign: 'center',
   },
-  handle: {
-    ...typography.caption,
-    color: colors.textMuted,
-  },
-  tagRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    marginTop: spacing.sm,
-  },
-  metaTag: {
+  identityRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 6,
-    borderRadius: radius.pill,
-  },
-  metaTagText: {
-    ...typography.caption,
-    color: colors.textMuted,
-    fontWeight: '600',
-  },
-  padded: {
     paddingHorizontal: spacing.xl,
+    gap: spacing['2xl'],
   },
-  statsCard: {
+  statsCol: {
+    flex: 1,
     flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: spacing.lg,
+    justifyContent: 'space-around',
   },
   statCell: {
-    flex: 1,
     alignItems: 'center',
     gap: 2,
   },
   statValue: {
-    ...typography.h2,
+    fontSize: 20,
+    lineHeight: 24,
+    fontWeight: '700',
     color: colors.text,
   },
   statLabel: {
     ...typography.caption,
     color: colors.textMuted,
   },
-  statDivider: {
-    width: StyleSheet.hairlineWidth,
-    height: 34,
-    backgroundColor: colors.border,
+  identityCopy: {
+    paddingHorizontal: spacing.xl,
+    marginTop: spacing.lg,
+    gap: spacing.xs,
   },
-  section: {
-    marginTop: spacing['2xl'],
+  displayName: {
+    ...typography.bodyStrong,
+    color: colors.text,
+    fontSize: 15,
+  },
+  bio: {
+    ...typography.body,
+    color: colors.text,
+    lineHeight: 20,
+  },
+  metaLine: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 2,
+  },
+  metaText: {
+    ...typography.caption,
+    color: colors.textMuted,
+  },
+  tagRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  styleTag: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 5,
+    borderRadius: radius.pill,
+  },
+  styleTagText: {
+    ...typography.caption,
+    color: colors.textMuted,
+    fontWeight: '600',
+  },
+  actionRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.xl,
+    marginTop: spacing.lg,
+  },
+  actionBtn: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    borderRadius: radius.md,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
+  },
+  actionBtnText: {
+    ...typography.caption,
+    color: colors.text,
+    fontWeight: '700',
+  },
+  highlights: {
+    paddingHorizontal: spacing.xl,
+    gap: spacing.lg,
+    paddingTop: spacing.xl,
+    paddingBottom: spacing.md,
+  },
+  highlight: {
+    alignItems: 'center',
+    width: 72,
+    gap: 4,
+  },
+  highlightRing: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    padding: 2.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  highlightInner: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 29,
+    backgroundColor: colors.bg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  highlightValue: {
+    ...typography.caption,
+    color: colors.text,
+    fontWeight: '700',
+    maxWidth: 72,
+    textAlign: 'center',
+  },
+  highlightLabel: {
+    ...typography.caption,
+    fontSize: 11,
+    color: colors.textSubtle,
+  },
+  tabBar: {
+    flexDirection: 'row',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
+    marginTop: spacing.sm,
+  },
+  tabItem: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+    gap: spacing.sm,
+  },
+  tabIndicator: {
+    width: '100%',
+    height: 2,
+    backgroundColor: colors.text,
+    borderRadius: 1,
+  },
+  tabContent: {
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.lg,
+    minHeight: 200,
   },
   pyramid: {
     gap: spacing.md,
@@ -463,33 +770,49 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontWeight: '600',
   },
-  settingRow: {
-    flexDirection: 'row',
+  emptyTab: {
     alignItems: 'center',
-    gap: spacing.md,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+    paddingVertical: spacing['3xl'],
+    gap: spacing.sm,
   },
-  settingIcon: {
-    width: 32,
+  emptyIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
     alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.sm,
   },
-  settingLabel: {
-    ...typography.body,
+  emptyTitle: {
+    ...typography.bodyStrong,
     color: colors.text,
   },
-  settingValue: {
-    ...typography.body,
+  emptyHint: {
+    ...typography.caption,
     color: colors.textMuted,
-    marginRight: spacing.sm,
+    textAlign: 'center',
+    maxWidth: 260,
   },
-  divider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: colors.border,
-    marginLeft: 60,
+  emptyAction: {
+    marginTop: spacing.md,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.pill,
+    backgroundColor: colors.accentMuted,
   },
-  signOut: {
-    marginTop: spacing['2xl'],
+  emptyActionText: {
+    ...typography.caption,
+    color: colors.accent,
+    fontWeight: '700',
+  },
+  signingOut: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: 'rgba(11,11,15,0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   bottomSpace: {
     height: spacing['3xl'],

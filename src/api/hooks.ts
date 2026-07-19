@@ -24,6 +24,7 @@ import type {
   ReactionType,
   RouteDetail,
   RouteSummary,
+  UpdateProfileInput,
 } from './types';
 
 export const queryKeys = {
@@ -192,6 +193,20 @@ export const useToggleCrew = () => {
     onSettled: () => {
       qc.invalidateQueries({ queryKey: queryKeys.crews });
       qc.invalidateQueries({ queryKey: ['profile'] });
+    },
+  });
+};
+
+export const useUpdateProfile = () => {
+  const api = useApiFetch();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: UpdateProfileInput) =>
+      api<Profile>('/users/me', { method: 'PATCH', body: input }),
+    onSuccess: (data) => {
+      qc.setQueryData(queryKeys.profileMe, data);
+      qc.invalidateQueries({ queryKey: ['climbers'] });
+      qc.invalidateQueries({ queryKey: ['feed'] });
     },
   });
 };

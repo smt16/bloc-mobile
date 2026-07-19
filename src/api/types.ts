@@ -174,3 +174,16 @@ export interface CreateLogInput {
   note?: string;
   hasMedia?: boolean;
 }
+
+/** Fields the current user can update via PATCH /users/me */
+export interface UpdateProfileInput {
+  name?: string;
+  handle?: string;
+  bio?: string;
+  homeGymId?: string;
+  topGrade?: string;
+  avatarColor?: string;
+  styleTags?: string[];
+  privacy?: 'public' | 'private';
+  pictureUrl?: string | null;
+}

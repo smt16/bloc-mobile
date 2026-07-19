@@ -39,6 +39,10 @@ export default function RootLayout() {
                 name="route/[id]"
                 options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
               />
+              <Stack.Screen
+                name="edit-profile"
+                options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
+              />
             </Stack>
           </View>
           </QueryProvider>
