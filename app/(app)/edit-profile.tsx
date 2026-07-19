@@ -14,17 +14,17 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { useGyms, useProfile, useUpdateProfile } from '../src/api/hooks';
-import type { UpdateProfileInput } from '../src/api/types';
-import { Avatar } from '../src/components/Avatar';
-import { Chip } from '../src/components/Chip';
-import { Icon } from '../src/components/Icon';
+import { useGyms, useProfile, useUpdateProfile } from '../../src/api/hooks';
+import type { UpdateProfileInput } from '../../src/api/types';
+import { Avatar } from '../../src/components/Avatar';
+import { Chip } from '../../src/components/Chip';
+import { Icon } from '../../src/components/Icon';
 import {
   AVATAR_COLORS,
   GRADE_OPTIONS,
   STYLE_TAG_OPTIONS,
-} from '../src/profile/constants';
-import { orange, radius, spacing, typography, useTheme, type SemanticColors } from '../src/theme';
+} from '../../src/profile/constants';
+import { orange, radius, spacing, typography, useTheme, type SemanticColors } from '../../src/theme';
 
 type FormState = {
   name: string;

@@ -19,7 +19,7 @@ export const NavHeader: React.FC<Props> = ({ title, variant = 'back', right }) =
   return (
     <View className="flex-row items-center gap-md py-sm">
       <Pressable
-        onPress={() => (router.canGoBack() ? router.back() : router.replace('/(app)'))}
+        onPress={() => (router.canGoBack() ? router.back() : router.replace('/(app)/(tabs)'))}
         className="h-[42px] w-[42px] items-center justify-center rounded-md border-2 border-border-strong bg-surface active:opacity-60"
         hitSlop={8}
       >

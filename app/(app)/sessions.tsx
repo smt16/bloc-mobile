@@ -2,14 +2,14 @@ import { useRouter } from 'expo-router';
 import React, { useMemo } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
-import { useSessions } from '../src/api/hooks';
-import type { Session } from '../src/api/types';
-import { Card } from '../src/components/Card';
-import { GradeChip } from '../src/components/GradeChip';
-import { Icon } from '../src/components/Icon';
-import { NavHeader } from '../src/components/NavHeader';
-import { Screen } from '../src/components/Screen';
-import { gradeColor, radius, spacing, typography, useTheme, type SemanticColors } from '../src/theme';
+import { useSessions } from '../../src/api/hooks';
+import type { Session } from '../../src/api/types';
+import { Card } from '../../src/components/Card';
+import { GradeChip } from '../../src/components/GradeChip';
+import { Icon } from '../../src/components/Icon';
+import { NavHeader } from '../../src/components/NavHeader';
+import { Screen } from '../../src/components/Screen';
+import { gradeColor, radius, spacing, typography, useTheme, type SemanticColors } from '../../src/theme';
 
 const formatDate = (iso: string): string => {
   const d = new Date(iso);

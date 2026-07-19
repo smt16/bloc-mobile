@@ -225,7 +225,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
     try {
       if (currentTokens?.refreshToken) {
-        await revokeRefreshToken(currentTokens.refreshToken);
+        await revokeRefreshToken(
+          currentTokens.refreshToken,
+          currentTokens.authMethod,
+        );
       }
 
       if (isConfigured && Platform.OS !== 'web') {

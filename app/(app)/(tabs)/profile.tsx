@@ -13,13 +13,13 @@ import {
   View,
 } from 'react-native';
 
-import { useProfile } from '../../src/api/hooks';
-import type { Achievement, Milestone } from '../../src/api/types';
-import { useAuth } from '../../src/auth/AuthContext';
-import { Avatar } from '../../src/components/Avatar';
-import { Card } from '../../src/components/Card';
-import { Icon, type IconName } from '../../src/components/Icon';
-import { Screen } from '../../src/components/Screen';
+import { useProfile } from '../../../src/api/hooks';
+import type { Achievement, Milestone } from '../../../src/api/types';
+import { useAuth } from '../../../src/auth/AuthContext';
+import { Avatar } from '../../../src/components/Avatar';
+import { Card } from '../../../src/components/Card';
+import { Icon, type IconName } from '../../../src/components/Icon';
+import { Screen } from '../../../src/components/Screen';
 import {
   gradeColor,
   gradients,
@@ -28,7 +28,7 @@ import {
   typography,
   useTheme,
   type SemanticColors,
-} from '../../src/theme';
+} from '../../../src/theme';
 
 type ProfileTab = 'sends' | 'timeline' | 'achievements';
 

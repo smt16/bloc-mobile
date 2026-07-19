@@ -1,11 +1,14 @@
-import { Redirect, Tabs } from 'expo-router';
+import { Redirect, Stack } from 'expo-router';
 import React from 'react';
 import { ActivityIndicator, View } from 'react-native';
 
 import { useAuth } from '../../src/auth/AuthContext';
-import { TabBar } from '../../src/components/TabBar';
 import { useTheme } from '../../src/theme';
 
+/**
+ * Auth-gated app shell. Tabs + modals/stack screens all live here so deep
+ * links to /log, /sessions, /edit-profile, /route/:id require a session.
+ */
 export default function AppLayout() {
   const { status } = useAuth();
   const { colors } = useTheme();
@@ -23,17 +26,30 @@ export default function AppLayout() {
   }
 
   return (
-    <Tabs
-      tabBar={(props) => <TabBar {...props} />}
+    <Stack
       screenOptions={{
         headerShown: false,
-        sceneStyle: { backgroundColor: colors.bg },
+        contentStyle: { backgroundColor: colors.bg },
+        animation: 'fade',
       }}
     >
-      <Tabs.Screen name="index" />
-      <Tabs.Screen name="explore" />
-      <Tabs.Screen name="crews" />
-      <Tabs.Screen name="profile" />
-    </Tabs>
+      <Stack.Screen name="(tabs)" />
+      <Stack.Screen
+        name="sessions"
+        options={{ animation: 'slide_from_right' }}
+      />
+      <Stack.Screen
+        name="log"
+        options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
+      />
+      <Stack.Screen
+        name="route/[id]"
+        options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
+      />
+      <Stack.Screen
+        name="edit-profile"
+        options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
+      />
+    </Stack>
   );
 }

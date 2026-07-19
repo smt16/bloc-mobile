@@ -15,16 +15,16 @@ import {
   useFollowClimber,
   useGyms,
   useRoutes,
-} from '../../src/api/hooks';
-import type { RouteSummary } from '../../src/api/types';
-import { Avatar } from '../../src/components/Avatar';
-import { Card } from '../../src/components/Card';
-import { Chip } from '../../src/components/Chip';
-import { GradeChip } from '../../src/components/GradeChip';
-import { Icon } from '../../src/components/Icon';
-import { Screen } from '../../src/components/Screen';
-import { SectionHeader } from '../../src/components/SectionHeader';
-import { radius, spacing, typography, useTheme, type SemanticColors } from '../../src/theme';
+} from '../../../src/api/hooks';
+import type { RouteSummary } from '../../../src/api/types';
+import { Avatar } from '../../../src/components/Avatar';
+import { Card } from '../../../src/components/Card';
+import { Chip } from '../../../src/components/Chip';
+import { GradeChip } from '../../../src/components/GradeChip';
+import { Icon } from '../../../src/components/Icon';
+import { Screen } from '../../../src/components/Screen';
+import { SectionHeader } from '../../../src/components/SectionHeader';
+import { radius, spacing, typography, useTheme, type SemanticColors } from '../../../src/theme';
 
 const FILTERS = ['All', 'Routes', 'Gyms', 'Climbers', 'Nearby'];
 

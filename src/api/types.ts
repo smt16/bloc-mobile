@@ -140,7 +140,8 @@ export interface ProfileStats {
 }
 
 export interface Profile extends ClimberSummary {
-  email: string | null;
+  /** Only present when viewing your own profile. */
+  email?: string | null;
   bio: string | null;
   styleTags: string[];
   privacy: 'public' | 'private';

@@ -11,15 +11,15 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { useRoute } from '../../src/api/hooks';
-import { Avatar } from '../../src/components/Avatar';
-import { AvatarStack } from '../../src/components/AvatarStack';
-import { Button } from '../../src/components/Button';
-import { Card } from '../../src/components/Card';
-import { GradeChip } from '../../src/components/GradeChip';
-import { Icon, type IconName } from '../../src/components/Icon';
-import { IconButton } from '../../src/components/IconButton';
-import { radius, spacing, typography, useTheme, type SemanticColors } from '../../src/theme';
+import { useRoute } from '../../../src/api/hooks';
+import { Avatar } from '../../../src/components/Avatar';
+import { AvatarStack } from '../../../src/components/AvatarStack';
+import { Button } from '../../../src/components/Button';
+import { Card } from '../../../src/components/Card';
+import { GradeChip } from '../../../src/components/GradeChip';
+import { Icon, type IconName } from '../../../src/components/Icon';
+import { IconButton } from '../../../src/components/IconButton';
+import { radius, spacing, typography, useTheme, type SemanticColors } from '../../../src/theme';
 
 export default function RouteDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();

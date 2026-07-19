@@ -315,7 +315,15 @@ export const refreshAccessToken = async (
         method: 'POST',
         body: { refreshToken },
       });
-      return tokensFromPasswordPayload(payload);
+      const result = tokensFromPasswordPayload(payload);
+      // Auth0 may omit refresh_token when rotation is off — keep the existing one.
+      return {
+        ...result,
+        tokens: {
+          ...result.tokens,
+          refreshToken: result.tokens.refreshToken ?? refreshToken,
+        },
+      };
     } catch (err) {
       throw new Error(messageFromApiError(err, 'Session expired'));
     }
@@ -343,11 +351,23 @@ export const refreshAccessToken = async (
 };
 
 /**
- * Best-effort revoke + Auth0 session termination URL.
- * Networking is wrapped in try/catch so logout always succeeds locally.
+ * Best-effort revoke. Networking is wrapped so logout always succeeds locally.
+ * - Password sessions: revoke via Bloc API (confidential client that issued them)
+ * - Social sessions: revoke against Auth0 with the Native client ID
  */
-export const revokeRefreshToken = async (refreshToken: string): Promise<void> => {
+export const revokeRefreshToken = async (
+  refreshToken: string,
+  authMethod: AuthMethod = 'social',
+): Promise<void> => {
   try {
+    if (authMethod === 'password') {
+      await apiFetch('/auth/revoke', {
+        method: 'POST',
+        body: { refreshToken },
+      });
+      return;
+    }
+
     await AuthSession.revokeAsync(
       {
         clientId: auth0Config.clientId,

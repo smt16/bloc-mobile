@@ -15,18 +15,18 @@ import {
   useFeed,
   useProfile,
   useReactToFeedItem,
-} from '../../src/api/hooks';
-import type { FeedItem, FeedKind } from '../../src/api/types';
-import { useAuth } from '../../src/auth/AuthContext';
-import { Avatar } from '../../src/components/Avatar';
-import { Card } from '../../src/components/Card';
-import { GradeChip } from '../../src/components/GradeChip';
-import { Icon, type IconName } from '../../src/components/Icon';
-import { IconButton } from '../../src/components/IconButton';
-import { ProgressBar } from '../../src/components/ProgressBar';
-import { ReactionBar } from '../../src/components/ReactionBar';
-import { Screen } from '../../src/components/Screen';
-import { SectionHeader } from '../../src/components/SectionHeader';
+} from '../../../src/api/hooks';
+import type { FeedItem, FeedKind } from '../../../src/api/types';
+import { useAuth } from '../../../src/auth/AuthContext';
+import { Avatar } from '../../../src/components/Avatar';
+import { Card } from '../../../src/components/Card';
+import { GradeChip } from '../../../src/components/GradeChip';
+import { Icon, type IconName } from '../../../src/components/Icon';
+import { IconButton } from '../../../src/components/IconButton';
+import { ProgressBar } from '../../../src/components/ProgressBar';
+import { ReactionBar } from '../../../src/components/ReactionBar';
+import { Screen } from '../../../src/components/Screen';
+import { SectionHeader } from '../../../src/components/SectionHeader';
 import {
   fonts,
   gradients,
@@ -36,7 +36,7 @@ import {
   typography,
   useTheme,
   type SemanticColors,
-} from '../../src/theme';
+} from '../../../src/theme';
 
 export default function FeedScreen() {
   const { user } = useAuth();
@@ -216,7 +216,7 @@ const FeedCard: React.FC<{
   item: FeedItem;
   kindMeta: Record<FeedKind, { icon: IconName; label: string; color: string }>;
   onOpenRoute: (id: string) => void;
-  onReact: (type: import('../../src/api/types').ReactionType) => void;
+  onReact: (type: import('../../../src/api/types').ReactionType) => void;
 }> = ({ item, kindMeta, onOpenRoute, onReact }) => {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);

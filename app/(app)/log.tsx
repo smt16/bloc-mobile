@@ -12,12 +12,12 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { useGyms, useLogClimb, useProfile } from '../src/api/hooks';
-import type { ClimbOutcome } from '../src/api/types';
-import { Button } from '../src/components/Button';
-import { Icon, type IconName } from '../src/components/Icon';
-import { NavHeader } from '../src/components/NavHeader';
-import { gradeColor, gradients, radius, spacing, typography, useTheme, type SemanticColors } from '../src/theme';
+import { useGyms, useLogClimb, useProfile } from '../../src/api/hooks';
+import type { ClimbOutcome } from '../../src/api/types';
+import { Button } from '../../src/components/Button';
+import { Icon, type IconName } from '../../src/components/Icon';
+import { NavHeader } from '../../src/components/NavHeader';
+import { gradeColor, gradients, radius, spacing, typography, useTheme, type SemanticColors } from '../../src/theme';
 
 const GRADES = ['V0', 'V1', 'V2', 'V3', 'V4', 'V5', 'V6', 'V7'];
 

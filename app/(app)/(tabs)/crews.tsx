@@ -2,15 +2,15 @@ import { LinearGradient } from 'expo-linear-gradient';
 import React, { useMemo } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { useCrews, useToggleCrew } from '../../src/api/hooks';
-import type { Crew } from '../../src/api/types';
-import { AvatarStack } from '../../src/components/AvatarStack';
-import { Card } from '../../src/components/Card';
-import { Icon } from '../../src/components/Icon';
-import { IconButton } from '../../src/components/IconButton';
-import { Screen } from '../../src/components/Screen';
-import { SectionHeader } from '../../src/components/SectionHeader';
-import { fonts, gradients, radius, shadows, spacing, typography, useTheme, type SemanticColors } from '../../src/theme';
+import { useCrews, useToggleCrew } from '../../../src/api/hooks';
+import type { Crew } from '../../../src/api/types';
+import { AvatarStack } from '../../../src/components/AvatarStack';
+import { Card } from '../../../src/components/Card';
+import { Icon } from '../../../src/components/Icon';
+import { IconButton } from '../../../src/components/IconButton';
+import { Screen } from '../../../src/components/Screen';
+import { SectionHeader } from '../../../src/components/SectionHeader';
+import { fonts, gradients, radius, shadows, spacing, typography, useTheme, type SemanticColors } from '../../../src/theme';
 
 export default function CrewsScreen() {
   const { colors } = useTheme();

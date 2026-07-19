@@ -18,7 +18,7 @@ export default function AuthLayout() {
   }
 
   if (status === 'authenticated') {
-    return <Redirect href="/(app)" />;
+    return <Redirect href="/(app)/(tabs)" />;
   }
 
   return (
