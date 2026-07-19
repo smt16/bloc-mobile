@@ -31,13 +31,13 @@ export const IconButton: React.FC<Props> = ({
       hitSlop={8}
       style={style}
       className={cn(
-        'h-[42px] w-[42px] items-center justify-center rounded-pill border border-border bg-surface active:opacity-60',
+        'h-[42px] w-[42px] items-center justify-center rounded-md border-2 border-border-strong bg-surface active:opacity-60',
         className,
       )}
     >
       <Icon name={name} size={size} color={color ?? colors.text} />
       {badge ? (
-        <View className="absolute right-[9px] top-[9px] h-2 w-2 rounded-full border-[1.5px] border-surface bg-accent" />
+        <View className="absolute right-[8px] top-[8px] h-2 w-2 rounded-sm border-[1.5px] border-surface bg-accent" />
       ) : null}
     </Pressable>
   );

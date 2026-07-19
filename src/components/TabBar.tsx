@@ -4,7 +4,7 @@ import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { gradients, radius, shadows, spacing, typography, useTheme } from '../theme';
+import { fonts, gradients, radius, shadows, spacing, useTheme } from '../theme';
 import { Icon, type IconName } from './Icon';
 
 /**
@@ -34,8 +34,8 @@ const TAB_META: Record<string, { label: string; icon: IconName; activeIcon: Icon
 };
 
 /**
- * Custom bottom tab bar with a raised gradient "Log" action in the center —
- * the low-friction capture entry point emphasized in the business plan.
+ * Custom bottom tab bar with a raised "Log" action in the center —
+ * square sticker FAB instead of soft lifestyle orb.
  */
 export const TabBar: React.FC<TabBarProps> = ({ state, navigation }) => {
   const insets = useSafeAreaInsets();
@@ -71,7 +71,12 @@ export const TabBar: React.FC<TabBarProps> = ({ state, navigation }) => {
           size={23}
           color={focused ? colors.accent : colors.textSubtle}
         />
-        <Text style={[styles.label, { color: focused ? colors.accent : colors.textSubtle }]}>
+        <Text
+          style={[
+            styles.label,
+            { color: focused ? colors.accent : colors.textSubtle },
+          ]}
+        >
           {meta.label}
         </Text>
       </Pressable>
@@ -85,7 +90,7 @@ export const TabBar: React.FC<TabBarProps> = ({ state, navigation }) => {
         {
           paddingBottom: insets.bottom || spacing.md,
           backgroundColor: colors.bgElevated,
-          borderTopColor: colors.border,
+          borderTopColor: colors.borderStrong,
         },
       ]}
     >
@@ -103,9 +108,15 @@ export const TabBar: React.FC<TabBarProps> = ({ state, navigation }) => {
           colors={[...gradients.ember]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          style={[styles.fab, { borderColor: colors.bgElevated }]}
+          style={[
+            styles.fab,
+            {
+              borderColor: colors.text,
+              backgroundColor: colors.accent,
+            },
+          ]}
         >
-          <Icon name="add" size={30} color={colors.bg} />
+          <Icon name="add" size={28} color={colors.accentText} />
         </LinearGradient>
       </Pressable>
     </View>
@@ -114,7 +125,7 @@ export const TabBar: React.FC<TabBarProps> = ({ state, navigation }) => {
 
 const styles = StyleSheet.create({
   wrap: {
-    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopWidth: 2,
     paddingTop: spacing.sm,
   },
   bar: {
@@ -132,25 +143,27 @@ const styles = StyleSheet.create({
     width: 72,
   },
   label: {
-    ...typography.caption,
-    fontSize: 11,
+    fontFamily: fonts.monoBold,
+    fontSize: 10,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
   },
   fabWrap: {
     position: 'absolute',
-    top: -22,
+    top: -20,
     alignSelf: 'center',
-    borderRadius: radius.pill,
-    ...shadows.glow,
+    borderRadius: radius.md,
+    ...shadows.floating,
   },
   fabPressed: {
-    transform: [{ scale: 0.94 }],
+    transform: [{ scale: 0.94 }, { translateX: 1 }, { translateY: 1 }],
   },
   fab: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 56,
+    height: 56,
+    borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 4,
+    borderWidth: 2.5,
   },
 });

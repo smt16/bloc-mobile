@@ -1,26 +1,26 @@
 /**
- * Brand orange scale (generic names — not "carrot").
- * Source: OKLCH scale converted to sRGB hex for React Native compatibility.
+ * Brand orange — traffic-cone / hazard-tape orange.
+ * Hotter and more fluorescent than a soft lifestyle coral.
  * Keep in sync with `orange.ts` consumers via this shared CJS module
  * (required by `tailwind.config.js`).
  */
 const orange = {
-  50: '#FEF4E7',
-  100: '#FCE9CF',
-  200: '#FAD49E',
-  300: '#F7BE6E',
-  400: '#F5A83D',
-  500: '#F2930C',
-  main: '#F2930C',
-  600: '#C2750B',
-  700: '#915808',
-  800: '#613B05',
-  900: '#301D03',
-  950: '#221502',
-  soft: '#FCE9CF',
-  muted: 'rgba(242, 147, 12, 0.16)',
-  deep: '#915808',
-  dark: '#301D03',
+  50: '#FFF3EB',
+  100: '#FFE0CC',
+  200: '#FFC199',
+  300: '#FF9A5C',
+  400: '#FF7A2E',
+  500: '#FF5500',
+  main: '#FF5500',
+  600: '#D94600',
+  700: '#A63500',
+  800: '#732400',
+  900: '#401400',
+  950: '#1A0800',
+  soft: '#FFE0CC',
+  muted: 'rgba(255, 85, 0, 0.18)',
+  deep: '#A63500',
+  dark: '#401400',
 };
 
 module.exports = { orange };

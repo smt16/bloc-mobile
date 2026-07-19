@@ -16,7 +16,9 @@ This is an Expo SDK 56 + Expo Router + TypeScript app.
 
 ## Auth
 
-- Auth0 Universal Login via `expo-auth-session` with PKCE.
+- **Email/password** goes through the Bloc API (`POST /auth/login`, `/auth/register`), which proxies Auth0’s password-realm grant with a confidential client secret.
+- **Google / Apple** use Auth0 Authorization Code + PKCE via `expo-auth-session`, with `connection=google-oauth2` or `connection=apple` (Apple button is iOS-only).
+- Social callbacks prefer **HTTPS Universal Links / App Links** on the Auth0 tenant domain (`useHttpsCallbacks`) so Auth0 skips the custom-scheme confirmation prompt. Requires a custom/dev build — not Expo Go.
 - Tokens are persisted in `expo-secure-store` via `src/auth/tokenStorage.ts`. Do NOT use AsyncStorage for tokens.
 - Auth0 config placeholders live in `src/config/auth.ts` (overridable via `app.json` → `expo.extra`).
 
@@ -28,7 +30,8 @@ This is an Expo SDK 56 + Expo Router + TypeScript app.
 
 - Strict TypeScript. Avoid `any`; prefer narrow types or `unknown` + refinement.
 - Functional components, hooks-first.
+- **Visual direction**: dirtbag / 90s skate zine — condensed display type (`Bebas Neue`), mono meta (`Space Mono`), hard sticker corners, offset print shadows, traffic-cone orange on newsprint (light) or asphalt (dark). Avoid soft lifestyle pills, purple gradients, and cream-luxury UI.
 - **NativeWind (Tailwind)** is the default for layout and static styling via `className`. Brand accent is the generic `orange` scale (`orange-main`, `orange-50`…`orange-950`) in `src/theme/orange.js` + `tailwind.config.js`.
 - Semantic surfaces (`bg-bg`, `text-text`, `bg-accent`) are CSS variables set by `ThemeProvider`, which follows the **device light/dark setting** by default.
 - For StyleSheet / imperative colors, use `useTheme().colors` (or `useThemedStyles`) so light/dark updates apply. Do not bake static `colors` into module-level StyleSheets.
-- Prefer token utilities over hardcoded hex values.
+- Prefer token utilities over hardcoded hex values. Headlines use `fonts.display`; captions/overlines use `fonts.mono` / `fonts.monoBold`.

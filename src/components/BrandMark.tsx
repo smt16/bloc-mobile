@@ -1,7 +1,7 @@
 import React from 'react';
 import { Text, View, type StyleProp, type ViewStyle } from 'react-native';
 
-import { typography } from '../theme';
+import { fonts, shadows } from '../theme';
 
 type Props = {
   size?: 'sm' | 'md' | 'lg';
@@ -10,8 +10,8 @@ type Props = {
 };
 
 /**
- * Bloc brand mark — a stacked geometric form evoking a climbing hold + chalk.
- * Built from pure RN <View> so it works without any SVG dependency.
+ * Bloc brand mark — angular chalk-block stencil.
+ * Hard edges + offset shadow = sticker slapped on a zine cover.
  */
 export const BrandMark: React.FC<Props> = ({
   size = 'md',
@@ -24,28 +24,35 @@ export const BrandMark: React.FC<Props> = ({
     <View className="flex-row items-center gap-md" style={style}>
       <View
         className="items-center justify-center bg-accent"
-        style={{
-          width: dimensions.mark,
-          height: dimensions.mark,
-          borderRadius: dimensions.mark / 4,
-        }}
+        style={[
+          {
+            width: dimensions.mark,
+            height: dimensions.mark,
+            borderRadius: 2,
+            borderWidth: 2,
+            borderColor: '#0A0A0A',
+          },
+          shadows.card,
+        ]}
       >
         <View
           className="bg-bg"
           style={{
-            width: dimensions.mark * 0.45,
-            height: dimensions.mark * 0.45,
-            borderRadius: dimensions.mark * 0.225,
+            width: dimensions.mark * 0.42,
+            height: dimensions.mark * 0.28,
+            borderRadius: 1,
+            transform: [{ rotate: '-8deg' }],
           }}
         />
       </View>
       {showWordmark ? (
         <Text
-          className="text-text"
+          className="text-text uppercase"
           style={{
+            fontFamily: fonts.display,
             fontSize: dimensions.text,
-            fontWeight: typography.display.fontWeight,
-            letterSpacing: -0.5,
+            letterSpacing: 2,
+            lineHeight: dimensions.text,
           }}
         >
           bloc
@@ -56,7 +63,7 @@ export const BrandMark: React.FC<Props> = ({
 };
 
 const sizeMap = {
-  sm: { mark: 24, text: 18 },
-  md: { mark: 36, text: 26 },
-  lg: { mark: 56, text: 40 },
+  sm: { mark: 24, text: 22 },
+  md: { mark: 36, text: 34 },
+  lg: { mark: 56, text: 52 },
 };

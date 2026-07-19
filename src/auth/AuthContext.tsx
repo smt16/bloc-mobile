@@ -3,10 +3,10 @@
  *
  * Responsibilities:
  *  - Hydrate persisted tokens on launch (and silently refresh if expired)
- *  - Provide `login` / `logout` methods backed by Auth0 Universal Login (PKCE)
+ *  - Email/password via Bloc API → Auth0 (confidential password-realm proxy)
+ *  - Google / Apple via Auth0 Authorization Code + PKCE (`connection=…`)
  *  - Expose the current user + access token to the UI tree
  */
-import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 import React, {
   createContext,
@@ -19,14 +19,18 @@ import React, {
 } from 'react';
 import { Platform } from 'react-native';
 
-import { auth0Discovery, isAuth0Configured } from '../config/auth';
+import { isAuth0Configured } from '../config/auth';
 import {
-  buildAuthRequestConfig,
+  AuthCancelledError,
+  authorizeWithConnection,
+  buildLogoutReturnTo,
   buildLogoutUrl,
   buildRedirectUri,
   decodeUserFromIdToken,
-  exchangeAuthorizationCode,
+  loginWithPassword as passwordLogin,
   refreshAccessToken,
+  registerWithPassword as passwordRegister,
+  requestPasswordReset as passwordReset,
   revokeRefreshToken,
   type Auth0User,
 } from './authService';
@@ -42,8 +46,13 @@ type AuthContextValue = {
   accessToken: string | null;
   error: string | null;
   isConfigured: boolean;
-  login: () => Promise<void>;
+  loginWithPassword: (email: string, password: string) => Promise<void>;
+  registerWithPassword: (email: string, password: string) => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
+  loginWithApple: () => Promise<void>;
+  requestPasswordReset: (email: string) => Promise<void>;
   logout: () => Promise<void>;
+  clearError: () => void;
   getAccessToken: () => Promise<string | null>;
 };
 
@@ -61,11 +70,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const redirectUri = useMemo(buildRedirectUri, []);
   const isConfigured = useMemo(isAuth0Configured, []);
-
-  const [request, , promptAsync] = AuthSession.useAuthRequest(
-    buildAuthRequestConfig(redirectUri),
-    auth0Discovery,
-  );
 
   const tokensRef = useRef<StoredTokens | null>(null);
   tokensRef.current = tokens;
@@ -88,6 +92,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     setStatus('unauthenticated');
   }, []);
 
+  const clearError = useCallback(() => setError(null), []);
+
   useEffect(() => {
     (async () => {
       try {
@@ -101,14 +107,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           stored.expiresAt !== null &&
           stored.expiresAt - REFRESH_SKEW_MS <= Date.now();
 
-        if (isExpired && stored.refreshToken && isConfigured) {
-          try {
-            const refreshed = await refreshAccessToken(stored.refreshToken);
-            await setSession(refreshed);
-            return;
-          } catch {
-            await clearSession();
-            return;
+        if (isExpired && stored.refreshToken) {
+          const canRefresh =
+            stored.authMethod === 'password' || isConfigured;
+          if (canRefresh) {
+            try {
+              const refreshed = await refreshAccessToken(
+                stored.refreshToken,
+                stored.authMethod,
+              );
+              await setSession(refreshed);
+              return;
+            } catch {
+              await clearSession();
+              return;
+            }
           }
         }
 
@@ -122,55 +135,90 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     })();
   }, [clearSession, isConfigured, setSession]);
 
-  const login = useCallback(async () => {
-    setError(null);
+  const loginWithPassword = useCallback(
+    async (email: string, password: string) => {
+      setError(null);
+      try {
+        const result = await passwordLogin(email.trim(), password);
+        await setSession(result);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Login failed';
+        console.warn('[auth] password login error', err);
+        setError(message);
+        throw err;
+      }
+    },
+    [setSession],
+  );
 
-    if (!isConfigured) {
-      setError(
-        'Auth0 is not configured. Add your domain + clientId in src/config/auth.ts.',
-      );
-      return;
-    }
+  const registerWithPassword = useCallback(
+    async (email: string, password: string) => {
+      setError(null);
+      try {
+        const result = await passwordRegister(email.trim(), password);
+        await setSession(result);
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : 'Could not create account';
+        console.warn('[auth] register error', err);
+        setError(message);
+        throw err;
+      }
+    },
+    [setSession],
+  );
 
-    if (!request) {
-      setError('Auth request is not ready yet. Please try again.');
-      return;
-    }
+  const loginWithSocial = useCallback(
+    async (connection: 'google-oauth2' | 'apple') => {
+      setError(null);
 
-    try {
-      const result = await promptAsync();
-
-      if (result.type === 'cancel' || result.type === 'dismiss') {
+      if (!isConfigured) {
+        setError(
+          'Auth0 is not configured. Add your domain + clientId in src/config/auth.ts.',
+        );
         return;
       }
 
-      if (result.type === 'error') {
-        throw new Error(
-          result.error?.message ?? result.params?.error_description ?? 'Login failed',
-        );
+      try {
+        const result = await authorizeWithConnection({
+          redirectUri,
+          connection,
+        });
+        await setSession(result);
+      } catch (err) {
+        if (err instanceof AuthCancelledError) return;
+        const message = err instanceof Error ? err.message : 'Sign-in failed';
+        console.warn('[auth] social login error', err);
+        setError(message);
       }
+    },
+    [isConfigured, redirectUri, setSession],
+  );
 
-      if (result.type !== 'success' || !result.params.code) {
-        throw new Error('Login did not complete.');
-      }
+  const loginWithGoogle = useCallback(
+    () => loginWithSocial('google-oauth2'),
+    [loginWithSocial],
+  );
 
-      if (!request.codeVerifier) {
-        throw new Error('Missing PKCE code verifier.');
-      }
-
-      const exchanged = await exchangeAuthorizationCode({
-        code: result.params.code,
-        codeVerifier: request.codeVerifier,
-        redirectUri,
-      });
-
-      await setSession(exchanged);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Login failed';
-      console.warn('[auth] login error', err);
-      setError(message);
+  const loginWithApple = useCallback(() => {
+    if (Platform.OS !== 'ios') {
+      setError('Apple Sign In is only available on iOS.');
+      return Promise.resolve();
     }
-  }, [isConfigured, promptAsync, redirectUri, request, setSession]);
+    return loginWithSocial('apple');
+  }, [loginWithSocial]);
+
+  const requestPasswordReset = useCallback(async (email: string) => {
+    setError(null);
+    try {
+      await passwordReset(email.trim());
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Could not send reset email';
+      setError(message);
+      throw err;
+    }
+  }, []);
 
   const logout = useCallback(async () => {
     const currentTokens = tokensRef.current;
@@ -181,7 +229,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       }
 
       if (isConfigured && Platform.OS !== 'web') {
-        const returnTo = `${redirectUri.split('://')[0]}://logout`;
+        const returnTo = buildLogoutReturnTo();
         const logoutUrl = buildLogoutUrl(returnTo);
         try {
           await WebBrowser.openAuthSessionAsync(logoutUrl, returnTo);
@@ -210,7 +258,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
 
     try {
-      const refreshed = await refreshAccessToken(current.refreshToken);
+      const refreshed = await refreshAccessToken(
+        current.refreshToken,
+        current.authMethod,
+      );
       await setSession(refreshed);
       return refreshed.tokens.accessToken;
     } catch {
@@ -226,11 +277,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       accessToken: tokens?.accessToken ?? null,
       error,
       isConfigured,
-      login,
+      loginWithPassword,
+      registerWithPassword,
+      loginWithGoogle,
+      loginWithApple,
+      requestPasswordReset,
       logout,
+      clearError,
       getAccessToken,
     }),
-    [error, getAccessToken, isConfigured, login, logout, status, tokens?.accessToken, user],
+    [
+      clearError,
+      error,
+      getAccessToken,
+      isConfigured,
+      loginWithApple,
+      loginWithGoogle,
+      loginWithPassword,
+      logout,
+      registerWithPassword,
+      requestPasswordReset,
+      status,
+      tokens?.accessToken,
+      user,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -1,13 +1,15 @@
 import React from 'react';
 import { View, type StyleProp, type ViewStyle } from 'react-native';
 
-import { cn } from '../theme';
+import { cn, shadows } from '../theme';
 
 type Props = {
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
   padded?: boolean;
   className?: string;
+  /** Hard-offset print shadow — use for interactive / featured cards. */
+  raised?: boolean;
 };
 
 export const Card: React.FC<Props> = ({
@@ -15,15 +17,16 @@ export const Card: React.FC<Props> = ({
   style,
   padded = true,
   className,
+  raised = false,
 }) => {
   return (
     <View
       className={cn(
-        'rounded-lg border border-border bg-surface',
+        'rounded-md border-2 border-border-strong bg-surface',
         padded && 'p-lg',
         className,
       )}
-      style={style}
+      style={[raised ? shadows.card : undefined, style]}
     >
       {children}
     </View>

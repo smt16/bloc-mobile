@@ -1,7 +1,7 @@
 import React from 'react';
 import { Pressable, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 
-import { cn, useTheme } from '../theme';
+import { cn, fonts, useTheme } from '../theme';
 import { Icon, type IconName } from './Icon';
 
 type Props = {
@@ -14,7 +14,7 @@ type Props = {
   className?: string;
 };
 
-/** Pill-shaped tag / filter chip. */
+/** Sticker-shaped tag / filter chip — hard corners, thick border. */
 export const Chip: React.FC<Props> = ({
   label,
   icon,
@@ -29,23 +29,30 @@ export const Chip: React.FC<Props> = ({
   const content = (
     <View
       className={cn(
-        'flex-row items-center gap-xs rounded-pill border px-md py-[7px]',
+        'flex-row items-center gap-xs rounded-sm border-2 px-md py-[6px]',
         className,
       )}
       style={[
         active
-          ? { backgroundColor: accent, borderColor: accent }
+          ? { backgroundColor: accent, borderColor: colors.text }
           : {
               backgroundColor: colors.surface,
-              borderColor: colors.border,
+              borderColor: colors.borderStrong,
             },
         style,
       ]}
     >
       {icon ? (
-        <Icon name={icon} size={14} color={active ? colors.bg : colors.textMuted} />
+        <Icon name={icon} size={14} color={active ? colors.accentText : colors.textMuted} />
       ) : null}
-      <Text className={cn('text-caption', active ? 'font-bold text-bg' : 'text-text-muted')}>
+      <Text
+        className={cn('uppercase', active ? 'text-accent-text' : 'text-text-muted')}
+        style={{
+          fontFamily: fonts.monoBold,
+          fontSize: 11,
+          letterSpacing: 1,
+        }}
+      >
         {label}
       </Text>
     </View>

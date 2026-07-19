@@ -9,7 +9,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 
-import { cn, useTheme } from '../theme';
+import { cn, fonts, shadows, useTheme } from '../theme';
 
 type Variant = 'primary' | 'secondary' | 'ghost';
 type Size = 'md' | 'lg';
@@ -35,7 +35,7 @@ const sizeClass: Record<Size, string> = {
 
 const variantContainer: Record<Variant, string> = {
   primary: 'bg-accent active:opacity-85',
-  secondary: 'bg-surface border border-border-strong active:bg-surface-muted',
+  secondary: 'bg-surface border-2 border-border-strong active:bg-surface-muted',
   ghost: 'bg-transparent active:opacity-70',
 };
 
@@ -74,9 +74,9 @@ export const Button: React.FC<Props> = ({
       accessibilityState={{ disabled: isInactive, busy: loading }}
       onPress={isInactive ? undefined : onPress}
       testID={testID}
-      style={style}
+      style={[variant === 'primary' ? shadows.card : undefined, style]}
       className={cn(
-        'flex-row items-center justify-center rounded-pill',
+        'flex-row items-center justify-center rounded-md',
         sizeClass[size],
         variantContainer[variant],
         isInactive && 'opacity-50',
@@ -88,7 +88,16 @@ export const Button: React.FC<Props> = ({
       ) : (
         <View className="flex-row items-center gap-sm">
           {leading ? <View className="items-center justify-center">{leading}</View> : null}
-          <Text className={cn('text-body-strong', variantLabel[variant])} numberOfLines={1}>
+          <Text
+            className={cn('text-body-strong uppercase', variantLabel[variant])}
+            style={{
+              fontFamily: fonts.display,
+              letterSpacing: 1.6,
+              fontSize: size === 'lg' ? 22 : 18,
+              lineHeight: size === 'lg' ? 24 : 20,
+            }}
+            numberOfLines={1}
+          >
             {label}
           </Text>
           {trailing ? <View className="items-center justify-center">{trailing}</View> : null}

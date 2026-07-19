@@ -10,7 +10,7 @@ import { Icon } from '../../src/components/Icon';
 import { IconButton } from '../../src/components/IconButton';
 import { Screen } from '../../src/components/Screen';
 import { SectionHeader } from '../../src/components/SectionHeader';
-import { gradients, radius, spacing, typography, useTheme, type SemanticColors } from '../../src/theme';
+import { fonts, gradients, radius, shadows, spacing, typography, useTheme, type SemanticColors } from '../../src/theme';
 
 export default function CrewsScreen() {
   const { colors } = useTheme();
@@ -28,7 +28,7 @@ export default function CrewsScreen() {
       <View style={styles.header}>
         <View>
           <Text style={styles.title}>Crews</Text>
-          <Text style={styles.subtitle}>Your climbing communities.</Text>
+          <Text style={styles.subtitle}>Your people. Your parking lot.</Text>
         </View>
         <IconButton name="add" onPress={() => undefined} />
       </View>
@@ -42,11 +42,11 @@ export default function CrewsScreen() {
         <View style={styles.bannerCopy}>
           <Text style={styles.bannerTitle}>Slab Club challenge</Text>
           <Text style={styles.bannerSub}>
-            Send 5 slabs this week · 3 crews competing
+            Send 5 slabs this week · 3 crews throwing down
           </Text>
         </View>
         <View style={styles.bannerBadge}>
-          <Icon name="trophy" size={22} color={colors.bg} />
+          <Icon name="trophy" size={22} color={colors.accentText} />
         </View>
       </LinearGradient>
 
@@ -58,7 +58,7 @@ export default function CrewsScreen() {
           <View style={styles.list}>
             {mine.length === 0 ? (
               <Text style={styles.emptyText}>
-                You haven’t joined a crew yet.
+                No crew yet. Find your people.
               </Text>
             ) : (
               mine.map((crew) => (
@@ -144,28 +144,39 @@ const createStyles = (colors: SemanticColors) =>
     banner: {
       flexDirection: 'row',
       alignItems: 'center',
-      borderRadius: radius.lg,
+      borderRadius: radius.md,
       padding: spacing.lg,
       marginBottom: spacing['2xl'],
+      borderWidth: 2.5,
+      borderColor: colors.text,
+      ...shadows.card,
     },
     bannerCopy: {
       flex: 1,
       gap: 4,
     },
     bannerTitle: {
-      ...typography.h2,
-      color: colors.bg,
+      fontFamily: fonts.display,
+      fontSize: 24,
+      lineHeight: 26,
+      letterSpacing: 1,
+      color: colors.accentText,
+      textTransform: 'uppercase',
     },
     bannerSub: {
-      ...typography.caption,
-      color: 'rgba(11,11,15,0.72)',
-      fontWeight: '600',
+      fontFamily: fonts.mono,
+      fontSize: 11,
+      letterSpacing: 0.4,
+      color: 'rgba(10,10,10,0.72)',
+      fontWeight: '400',
     },
     bannerBadge: {
       width: 48,
       height: 48,
-      borderRadius: 24,
-      backgroundColor: 'rgba(11,11,15,0.2)',
+      borderRadius: radius.sm,
+      backgroundColor: 'rgba(10,10,10,0.2)',
+      borderWidth: 2,
+      borderColor: 'rgba(10,10,10,0.45)',
       alignItems: 'center',
       justifyContent: 'center',
     },

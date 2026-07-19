@@ -13,13 +13,19 @@ const KEYS = {
   refreshToken: 'bloc.refresh_token',
   idToken: 'bloc.id_token',
   expiresAt: 'bloc.expires_at',
+  authMethod: 'bloc.auth_method',
 } as const;
+
+/** How the session was established — drives which refresh path we use. */
+export type AuthMethod = 'password' | 'social';
 
 export type StoredTokens = {
   accessToken: string;
   refreshToken: string | null;
   idToken: string | null;
   expiresAt: number | null;
+  /** Defaults to `social` for sessions created before this field existed. */
+  authMethod: AuthMethod;
 };
 
 type Key = (typeof KEYS)[keyof typeof KEYS];
@@ -63,25 +69,32 @@ export const tokenStorage = {
         KEYS.expiresAt,
         tokens.expiresAt !== null ? String(tokens.expiresAt) : null,
       ),
+      setItem(KEYS.authMethod, tokens.authMethod),
     ]);
   },
 
   async load(): Promise<StoredTokens | null> {
-    const [accessToken, refreshToken, idToken, expiresAtRaw] = await Promise.all([
-      getItem(KEYS.accessToken),
-      getItem(KEYS.refreshToken),
-      getItem(KEYS.idToken),
-      getItem(KEYS.expiresAt),
-    ]);
+    const [accessToken, refreshToken, idToken, expiresAtRaw, authMethodRaw] =
+      await Promise.all([
+        getItem(KEYS.accessToken),
+        getItem(KEYS.refreshToken),
+        getItem(KEYS.idToken),
+        getItem(KEYS.expiresAt),
+        getItem(KEYS.authMethod),
+      ]);
 
     if (!accessToken) return null;
 
     const expiresAt = expiresAtRaw ? Number(expiresAtRaw) : null;
+    const authMethod: AuthMethod =
+      authMethodRaw === 'password' ? 'password' : 'social';
+
     return {
       accessToken,
       refreshToken,
       idToken,
       expiresAt: Number.isFinite(expiresAt as number) ? expiresAt : null,
+      authMethod,
     };
   },
 

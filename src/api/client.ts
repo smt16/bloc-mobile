@@ -58,9 +58,12 @@ export const apiFetch = async <TResponse = unknown>(
   });
 
   const contentType = response.headers.get('content-type') ?? '';
-  const parsedBody = contentType.includes('application/json')
-    ? await response.json().catch(() => null)
-    : await response.text().catch(() => null);
+  const parsedBody =
+    response.status === 204
+      ? null
+      : contentType.includes('application/json')
+        ? await response.json().catch(() => null)
+        : await response.text().catch(() => null);
 
   if (!response.ok) {
     throw new ApiError(

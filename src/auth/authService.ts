@@ -1,24 +1,26 @@
 /**
- * Auth0 authentication service using OAuth 2.0 Authorization Code Flow with PKCE.
+ * Auth0 authentication service.
  *
- * - Uses expo-auth-session (Universal Login in a system browser)
- * - Persists tokens in expo-secure-store via tokenStorage
- * - Supports silent refresh via the Auth0 refresh token grant
- *
- * Reference: https://docs.expo.dev/versions/latest/sdk/auth-session/
+ * - Social (Google / Apple): Authorization Code + PKCE with a forced `connection`
+ * - Email/password: tokens come from the Bloc API (`/auth/login`, `/auth/register`),
+ *   which proxies Auth0's password-realm grant with a confidential client secret
+ * - Refresh / revoke still talk to Auth0 directly from the device
  */
 import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 import { jwtDecode } from 'jwt-decode';
 import { Platform } from 'react-native';
 
+import { apiFetch, ApiError } from '../api/client';
 import {
   auth0Config,
   auth0Discovery,
   auth0Endpoints,
-  nativeBundleId,
+  buildCustomSchemeCallbackUri,
+  buildHttpsCallbackUri,
+  nativeScheme,
 } from '../config/auth';
-import type { StoredTokens } from './tokenStorage';
+import type { AuthMethod, StoredTokens } from './tokenStorage';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -36,19 +38,53 @@ export type AuthResult = {
   user: Auth0User | null;
 };
 
+export type SocialConnection = 'google-oauth2' | 'apple';
+
+type PasswordTokenPayload = {
+  accessToken: string;
+  refreshToken: string | null;
+  idToken: string | null;
+  expiresIn: number | null;
+  tokenType?: string;
+};
+
 /**
- * Builds the redirect URI that we register with Auth0.
+ * Builds the redirect URI registered with Auth0.
  *
- * The format mirrors the react-native-auth0 SDK so the same Allowed Callback
- * URLs work in both worlds:
- *   com.bloc://{auth0Domain}/{ios|android|web}/{bundleId}/callback
+ * Prefer HTTPS Universal Links / App Links so Auth0 skips the
+ * "Authorize App" confirmation that custom schemes trigger:
+ *   https://{domain}/ios|android/{bundleId}/callback
+ *
+ * Falls back to `com.bloc://…` when `useHttpsCallbacks` is false (Expo Go).
  */
 export const buildRedirectUri = (): string => {
   if (Platform.OS === 'web') {
     return AuthSession.makeRedirectUri({ path: 'callback' });
   }
-  const platformSegment = Platform.OS === 'ios' ? 'ios' : 'android';
-  return `${nativeBundleId}://${auth0Config.domain}/${platformSegment}/${nativeBundleId}/callback`;
+
+  if (auth0Config.useHttpsCallbacks) {
+    return buildHttpsCallbackUri(Platform.OS === 'ios' ? 'ios' : 'android');
+  }
+
+  return buildCustomSchemeCallbackUri(
+    Platform.OS === 'ios' ? 'ios' : 'android',
+  );
+};
+
+/**
+ * Logout `returnTo` must be listed under Auth0 Allowed Logout URLs.
+ * Use the same HTTPS callback when Universal Links are enabled.
+ */
+export const buildLogoutReturnTo = (): string => {
+  if (Platform.OS === 'web') {
+    return AuthSession.makeRedirectUri({ path: 'logout' });
+  }
+
+  if (auth0Config.useHttpsCallbacks) {
+    return buildHttpsCallbackUri(Platform.OS === 'ios' ? 'ios' : 'android');
+  }
+
+  return `${nativeScheme}://logout`;
 };
 
 const decodeUserFromIdToken = (idToken: string | null | undefined): Auth0User | null => {
@@ -65,6 +101,7 @@ const toStoredTokens = (
     AuthSession.TokenResponse,
     'accessToken' | 'refreshToken' | 'idToken' | 'expiresIn' | 'issuedAt'
   >,
+  authMethod: AuthMethod,
 ): StoredTokens => {
   const expiresAt =
     result.expiresIn && result.issuedAt
@@ -76,16 +113,128 @@ const toStoredTokens = (
     refreshToken: result.refreshToken ?? null,
     idToken: result.idToken ?? null,
     expiresAt,
+    authMethod,
   };
 };
 
+const tokensFromPasswordPayload = (payload: PasswordTokenPayload): AuthResult => {
+  const issuedAt = Math.floor(Date.now() / 1000);
+  const tokens = toStoredTokens(
+    {
+      accessToken: payload.accessToken,
+      refreshToken: payload.refreshToken ?? undefined,
+      idToken: payload.idToken ?? undefined,
+      expiresIn: payload.expiresIn ?? undefined,
+      issuedAt,
+    },
+    'password',
+  );
+
+  return {
+    tokens,
+    user: decodeUserFromIdToken(tokens.idToken),
+  };
+};
+
+const messageFromApiError = (err: unknown, fallback: string): string => {
+  if (err instanceof ApiError) {
+    const body = err.body;
+    if (body && typeof body === 'object') {
+      const message = (body as { message?: unknown }).message;
+      if (typeof message === 'string' && message.length > 0) return message;
+      if (Array.isArray(message) && typeof message[0] === 'string') {
+        return message[0];
+      }
+      // Nest GlobalExceptionFilter nests HttpException.getResponse() under message
+      if (message && typeof message === 'object') {
+        const nested = (message as { message?: unknown }).message;
+        if (typeof nested === 'string' && nested.length > 0) return nested;
+      }
+    }
+    if (err.status === 401) return 'Invalid email or password.';
+    if (err.status === 409) return 'An account with that email already exists.';
+    if (err.status === 503) {
+      return 'Email/password login is not configured on the server yet.';
+    }
+  }
+  if (err instanceof Error && err.message) return err.message;
+  return fallback;
+};
+
 /**
- * Kicks off Universal Login, returns tokens + decoded user on success.
+ * Helper for AuthContext: returns a fully-configured AuthRequestConfig.
+ * Pass `connection` to skip Universal Login and go straight to a social IdP.
  *
- * Must be called from inside a component because expo-auth-session needs to
- * coordinate with the system browser. Prefer the `useAuth0Login` hook in
- * AuthContext for the ergonomic React API.
+ * Auth0 may still show an "Authorize App" consent after Google unless the API
+ * has **Allow Skipping User Consent** enabled (APIs → Bloc API → Settings).
+ * That setting is required for a normal Google → app hop with an `audience`.
  */
+export const buildAuthRequestConfig = (
+  redirectUri: string,
+  connection?: SocialConnection,
+): AuthSession.AuthRequestConfig => ({
+  clientId: auth0Config.clientId,
+  scopes: auth0Config.scopes,
+  redirectUri,
+  responseType: AuthSession.ResponseType.Code,
+  usePKCE: true,
+  extraParams: {
+    audience: auth0Config.audience,
+    // Force account picker on social; do not use Auth0 Universal Login UI.
+    ...(connection
+      ? { connection, prompt: 'select_account' }
+      : { prompt: 'login' }),
+  },
+});
+
+/**
+ * Authorization Code + PKCE against a specific Auth0 social connection
+ * (Google or Apple). Opens the system browser for that provider only.
+ */
+export const authorizeWithConnection = async (params: {
+  redirectUri: string;
+  connection: SocialConnection;
+}): Promise<AuthResult> => {
+  const request = new AuthSession.AuthRequest(
+    buildAuthRequestConfig(params.redirectUri, params.connection),
+  );
+
+  const result = await request.promptAsync(auth0Discovery);
+
+  if (result.type === 'cancel' || result.type === 'dismiss') {
+    throw new AuthCancelledError();
+  }
+
+  if (result.type === 'error') {
+    throw new Error(
+      result.error?.message ??
+        result.params?.error_description ??
+        'Social sign-in failed',
+    );
+  }
+
+  if (result.type !== 'success' || !result.params.code) {
+    throw new Error('Social sign-in did not complete.');
+  }
+
+  if (!request.codeVerifier) {
+    throw new Error('Missing PKCE code verifier.');
+  }
+
+  return exchangeAuthorizationCode({
+    code: result.params.code,
+    codeVerifier: request.codeVerifier,
+    redirectUri: params.redirectUri,
+  });
+};
+
+export class AuthCancelledError extends Error {
+  constructor() {
+    super('Authentication cancelled');
+    this.name = 'AuthCancelledError';
+  }
+}
+
 export const exchangeAuthorizationCode = async (params: {
   code: string;
   codeVerifier: string;
@@ -103,20 +252,75 @@ export const exchangeAuthorizationCode = async (params: {
     auth0Discovery,
   );
 
-  const tokens = toStoredTokens(tokenResult);
+  const tokens = toStoredTokens(tokenResult, 'social');
   return {
     tokens,
     user: decodeUserFromIdToken(tokens.idToken),
   };
 };
 
+export const loginWithPassword = async (
+  email: string,
+  password: string,
+): Promise<AuthResult> => {
+  try {
+    const payload = await apiFetch<PasswordTokenPayload>('/auth/login', {
+      method: 'POST',
+      body: { email, password },
+    });
+    return tokensFromPasswordPayload(payload);
+  } catch (err) {
+    throw new Error(messageFromApiError(err, 'Login failed'));
+  }
+};
+
+export const registerWithPassword = async (
+  email: string,
+  password: string,
+): Promise<AuthResult> => {
+  try {
+    const payload = await apiFetch<PasswordTokenPayload>('/auth/register', {
+      method: 'POST',
+      body: { email, password },
+    });
+    return tokensFromPasswordPayload(payload);
+  } catch (err) {
+    throw new Error(messageFromApiError(err, 'Could not create account'));
+  }
+};
+
+export const requestPasswordReset = async (email: string): Promise<void> => {
+  try {
+    await apiFetch('/auth/forgot-password', {
+      method: 'POST',
+      body: { email },
+    });
+  } catch (err) {
+    throw new Error(messageFromApiError(err, 'Could not send reset email'));
+  }
+};
+
 /**
- * Refreshes the access token using the stored refresh token.
- * Throws on failure so callers can decide whether to force a logout.
+ * Refreshes the access token.
+ * - Social sessions: Auth0 refresh grant with the Native client ID
+ * - Password sessions: Bloc API → confidential client (same client that issued them)
  */
 export const refreshAccessToken = async (
   refreshToken: string,
+  authMethod: AuthMethod = 'social',
 ): Promise<AuthResult> => {
+  if (authMethod === 'password') {
+    try {
+      const payload = await apiFetch<PasswordTokenPayload>('/auth/refresh', {
+        method: 'POST',
+        body: { refreshToken },
+      });
+      return tokensFromPasswordPayload(payload);
+    } catch (err) {
+      throw new Error(messageFromApiError(err, 'Session expired'));
+    }
+  }
+
   const tokenResult = await AuthSession.refreshAsync(
     {
       clientId: auth0Config.clientId,
@@ -128,7 +332,7 @@ export const refreshAccessToken = async (
     auth0Discovery,
   );
 
-  const tokens = toStoredTokens(tokenResult);
+  const tokens = toStoredTokens(tokenResult, 'social');
   return {
     tokens: {
       ...tokens,
@@ -163,23 +367,6 @@ export const buildLogoutUrl = (returnTo: string): string => {
   });
   return `${auth0Endpoints.endSession}?${params.toString()}`;
 };
-
-/**
- * Helper for AuthContext: returns a fully-configured AuthRequestConfig.
- */
-export const buildAuthRequestConfig = (
-  redirectUri: string,
-): AuthSession.AuthRequestConfig => ({
-  clientId: auth0Config.clientId,
-  scopes: auth0Config.scopes,
-  redirectUri,
-  responseType: AuthSession.ResponseType.Code,
-  usePKCE: true,
-  extraParams: {
-    audience: auth0Config.audience,
-    prompt: 'login',
-  },
-});
 
 export const decodeAccessToken = <T = Record<string, unknown>>(
   accessToken: string,

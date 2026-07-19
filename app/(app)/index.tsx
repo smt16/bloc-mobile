@@ -27,7 +27,16 @@ import { ProgressBar } from '../../src/components/ProgressBar';
 import { ReactionBar } from '../../src/components/ReactionBar';
 import { Screen } from '../../src/components/Screen';
 import { SectionHeader } from '../../src/components/SectionHeader';
-import { gradients, radius, spacing, typography, useTheme, type SemanticColors } from '../../src/theme';
+import {
+  fonts,
+  gradients,
+  radius,
+  shadows,
+  spacing,
+  typography,
+  useTheme,
+  type SemanticColors,
+} from '../../src/theme';
 
 export default function FeedScreen() {
   const { user } = useAuth();
@@ -80,7 +89,7 @@ export default function FeedScreen() {
               .toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })
               .toUpperCase()}
           </Text>
-          <Text style={styles.greeting}>Hey {firstName} 👋</Text>
+          <Text style={styles.greeting}>{`WHAT'S UP,\n${firstName.toUpperCase()}`}</Text>
         </View>
         <View style={styles.headerActions}>
           <IconButton name="calendar-outline" onPress={() => router.push('/sessions')} />
@@ -124,26 +133,26 @@ export default function FeedScreen() {
           >
             <View style={styles.heroTop}>
               <View style={styles.heroStreak}>
-                <Icon name="flame" size={18} color={colors.bg} />
+                <Icon name="flame" size={18} color={colors.accentText} />
                 <Text style={styles.heroStreakText}>
-                  {stats?.streak ?? 0}-day streak
+                  {stats?.streak ?? 0}-DAY RUN
                 </Text>
               </View>
-              <Icon name="chevron-forward" size={18} color="rgba(11,11,15,0.6)" />
+              <Icon name="chevron-forward" size={18} color="rgba(10,10,10,0.55)" />
             </View>
             <Text style={styles.heroTitle}>
-              {sessionsThisWeek} of {weeklyGoal} sessions this week
+              {sessionsThisWeek}/{weeklyGoal} SESSIONS{'\n'}THIS WEEK
             </Text>
             <Text style={styles.heroSub}>
               {sessionsThisWeek >= weeklyGoal
-                ? 'Weekly goal smashed. 💥'
-                : 'One more to hit your weekly goal.'}
+                ? 'Quota crushed. Go find something harder.'
+                : 'Still short. Lace up or stay soft.'}
             </Text>
             <ProgressBar
               progress={sessionsThisWeek / weeklyGoal}
               height={10}
-              colorsOverride={['#0B0B0F', 'rgba(11,11,15,0.7)']}
-              track="rgba(11,11,15,0.25)"
+              colorsOverride={['#0A0A0A', 'rgba(10,10,10,0.65)']}
+              track="rgba(10,10,10,0.22)"
               style={styles.heroBar}
             />
           </LinearGradient>
@@ -156,13 +165,13 @@ export default function FeedScreen() {
         </View>
 
         <View style={styles.section}>
-          <SectionHeader title="Tribe feed" action="Filters" />
+          <SectionHeader title="The scene" action="Filters" />
           {feedQuery.isLoading ? (
             <ActivityIndicator color={colors.accent} style={styles.loader} />
           ) : feedQuery.isError ? (
-            <Text style={styles.emptyText}>Couldn’t load the feed. Pull to retry.</Text>
+            <Text style={styles.emptyText}>Feed fried. Pull to retry.</Text>
           ) : (feedQuery.data?.length ?? 0) === 0 ? (
-            <Text style={styles.emptyText}>No activity yet — go log a climb!</Text>
+            <Text style={styles.emptyText}>Dead quiet. Go send something.</Text>
           ) : (
             <View style={styles.feed}>
               {feedQuery.data!.map((item) => (
@@ -297,11 +306,15 @@ const createStyles = (colors: SemanticColors) =>
     eyebrow: {
       ...typography.overline,
       color: colors.accent,
-      marginBottom: 2,
+      marginBottom: 4,
     },
     greeting: {
-      ...typography.h1,
+      fontFamily: fonts.display,
+      fontSize: 34,
+      lineHeight: 34,
+      letterSpacing: 1.2,
       color: colors.text,
+      textTransform: 'uppercase',
     },
     padded: {
       paddingHorizontal: spacing.xl,
@@ -322,7 +335,7 @@ const createStyles = (colors: SemanticColors) =>
       right: 6,
       width: 20,
       height: 20,
-      borderRadius: 10,
+      borderRadius: 2,
       backgroundColor: colors.accent,
       alignItems: 'center',
       justifyContent: 'center',
@@ -331,14 +344,18 @@ const createStyles = (colors: SemanticColors) =>
     },
     storyName: {
       ...typography.caption,
-      fontSize: 11,
+      fontSize: 10,
       color: colors.textMuted,
       maxWidth: 66,
+      textTransform: 'uppercase',
     },
     hero: {
-      borderRadius: radius.xl,
+      borderRadius: radius.md,
       padding: spacing.xl,
       marginBottom: spacing.lg,
+      borderWidth: 2.5,
+      borderColor: colors.text,
+      ...shadows.card,
     },
     heroTop: {
       flexDirection: 'row',
@@ -350,25 +367,31 @@ const createStyles = (colors: SemanticColors) =>
       flexDirection: 'row',
       alignItems: 'center',
       gap: 6,
-      backgroundColor: 'rgba(11,11,15,0.18)',
+      backgroundColor: 'rgba(10,10,10,0.2)',
       paddingHorizontal: spacing.md,
       paddingVertical: 6,
-      borderRadius: radius.pill,
+      borderRadius: radius.sm,
+      borderWidth: 1.5,
+      borderColor: 'rgba(10,10,10,0.35)',
     },
     heroStreakText: {
-      ...typography.caption,
-      color: colors.bg,
-      fontWeight: '800',
+      fontFamily: fonts.monoBold,
+      fontSize: 11,
+      letterSpacing: 1.2,
+      color: colors.accentText,
     },
     heroTitle: {
-      ...typography.h1,
-      color: colors.bg,
-      fontSize: 24,
+      fontFamily: fonts.display,
+      fontSize: 28,
+      lineHeight: 28,
+      letterSpacing: 1,
+      color: colors.accentText,
+      textTransform: 'uppercase',
     },
     heroSub: {
       ...typography.body,
-      color: 'rgba(11,11,15,0.7)',
-      marginTop: 2,
+      color: 'rgba(10,10,10,0.72)',
+      marginTop: 6,
       marginBottom: spacing.lg,
     },
     heroBar: {
@@ -386,18 +409,24 @@ const createStyles = (colors: SemanticColors) =>
     statIcon: {
       width: 30,
       height: 30,
-      borderRadius: 15,
+      borderRadius: radius.sm,
       alignItems: 'center',
       justifyContent: 'center',
       marginBottom: 2,
+      borderWidth: 1.5,
+      borderColor: colors.borderStrong,
     },
     statValue: {
-      ...typography.h2,
+      fontFamily: fonts.display,
+      fontSize: 22,
+      lineHeight: 24,
+      letterSpacing: 0.8,
       color: colors.text,
     },
     statLabel: {
       ...typography.caption,
       color: colors.textMuted,
+      textTransform: 'uppercase',
     },
     section: {
       gap: spacing.lg,
@@ -444,19 +473,25 @@ const createStyles = (colors: SemanticColors) =>
       gap: 4,
       paddingHorizontal: spacing.sm,
       paddingVertical: 5,
-      borderRadius: radius.pill,
+      borderRadius: radius.sm,
+      borderWidth: 1.5,
+      borderColor: colors.borderStrong,
     },
     kindPillText: {
       ...typography.caption,
-      fontSize: 11,
+      fontSize: 10,
       fontWeight: '700',
+      textTransform: 'uppercase',
+      letterSpacing: 0.8,
     },
     routeChipRow: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: spacing.sm,
       backgroundColor: colors.surfaceMuted,
-      borderRadius: radius.md,
+      borderRadius: radius.sm,
+      borderWidth: 1.5,
+      borderColor: colors.borderStrong,
       paddingHorizontal: spacing.md,
       paddingVertical: spacing.md,
     },
@@ -475,7 +510,9 @@ const createStyles = (colors: SemanticColors) =>
     },
     media: {
       height: 168,
-      borderRadius: radius.md,
+      borderRadius: radius.sm,
+      borderWidth: 2,
+      borderColor: colors.borderStrong,
       alignItems: 'center',
       justifyContent: 'center',
       gap: spacing.sm,
@@ -483,15 +520,18 @@ const createStyles = (colors: SemanticColors) =>
     playButton: {
       width: 52,
       height: 52,
-      borderRadius: 26,
-      backgroundColor: 'rgba(11,11,15,0.45)',
+      borderRadius: radius.md,
+      backgroundColor: 'rgba(10,10,10,0.55)',
+      borderWidth: 2,
+      borderColor: colors.text,
       alignItems: 'center',
       justifyContent: 'center',
     },
     mediaLabel: {
       ...typography.caption,
       color: colors.text,
-      fontWeight: '600',
+      fontWeight: '700',
+      textTransform: 'uppercase',
     },
     feedFooter: {
       marginTop: spacing.xs,

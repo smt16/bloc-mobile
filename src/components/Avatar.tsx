@@ -102,7 +102,7 @@ const createStyles = (colors: SemanticColors) =>
     },
     initials: {
       ...typography.bodyStrong,
-      color: colors.bg,
+      color: colors.accentText,
       fontWeight: '800',
     },
     ringWrap: {

@@ -1,13 +1,6 @@
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import {
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  Text,
-  View,
-} from 'react-native';
+import { KeyboardAvoidingView, Platform, Text, View } from 'react-native';
 
 import { useAuth } from '../../src/auth/AuthContext';
 import { BrandMark } from '../../src/components/BrandMark';
@@ -20,13 +13,12 @@ import {
 import { TextField } from '../../src/components/TextField';
 import { fonts } from '../../src/theme';
 
-export default function LoginScreen() {
+export default function SignupScreen() {
   const router = useRouter();
   const {
-    loginWithPassword,
+    registerWithPassword,
     loginWithGoogle,
     loginWithApple,
-    requestPasswordReset,
     error,
     clearError,
     isConfigured,
@@ -34,6 +26,7 @@ export default function LoginScreen() {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
   const [submitting, setSubmitting] = useState<'password' | 'social' | null>(
     null,
   );
@@ -41,7 +34,7 @@ export default function LoginScreen() {
 
   const busy = submitting !== null;
 
-  const onLogin = async () => {
+  const onRegister = async () => {
     clearError();
     setFieldError(null);
 
@@ -50,33 +43,22 @@ export default function LoginScreen() {
       setFieldError('Email and password are required.');
       return;
     }
+    if (password.length < 8) {
+      setFieldError('Password must be at least 8 characters.');
+      return;
+    }
+    if (password !== confirm) {
+      setFieldError('Passwords do not match.');
+      return;
+    }
 
     setSubmitting('password');
     try {
-      await loginWithPassword(trimmed, password);
+      await registerWithPassword(trimmed, password);
     } catch {
       // Error surfaced via AuthContext.error
     } finally {
       setSubmitting(null);
-    }
-  };
-
-  const onForgotPassword = async () => {
-    clearError();
-    const trimmed = email.trim();
-    if (!trimmed) {
-      setFieldError('Enter your email above, then tap Forgot password.');
-      return;
-    }
-
-    try {
-      await requestPasswordReset(trimmed);
-      Alert.alert(
-        'Check your inbox',
-        'If an account exists for that email, Auth0 sent a reset link.',
-      );
-    } catch {
-      // Error surfaced via AuthContext.error
     }
   };
 
@@ -112,10 +94,10 @@ export default function LoginScreen() {
                     letterSpacing: 1.2,
                   }}
                 >
-                  Welcome back
+                  Create an account
                 </Text>
                 <Text className="text-center text-body text-text-muted">
-                  Log in to keep logging sends with the crew.
+                  One climber ID. Gym to gym. No corporate passport.
                 </Text>
               </View>
             </View>
@@ -141,38 +123,29 @@ export default function LoginScreen() {
                   setPassword(v);
                   setFieldError(null);
                 }}
+                placeholder="At least 8 characters"
+                secureToggle
+                textContentType="newPassword"
+                autoComplete="new-password"
+                editable={!busy}
+              />
+              <TextField
+                label="Confirm password"
+                value={confirm}
+                onChangeText={(v) => {
+                  setConfirm(v);
+                  setFieldError(null);
+                }}
                 placeholder="••••••••"
                 secureToggle
-                textContentType="password"
-                autoComplete="password"
+                textContentType="newPassword"
+                autoComplete="new-password"
                 editable={!busy}
                 onSubmitEditing={() => {
-                  void onLogin();
+                  void onRegister();
                 }}
                 returnKeyType="go"
               />
-
-              <View className="flex-row items-center justify-end">
-                <Pressable
-                  accessibilityRole="button"
-                  onPress={() => {
-                    void onForgotPassword();
-                  }}
-                  disabled={busy}
-                  className="active:opacity-70"
-                >
-                  <Text
-                    className="uppercase text-accent"
-                    style={{
-                      fontFamily: fonts.monoBold,
-                      fontSize: 11,
-                      letterSpacing: 1.2,
-                    }}
-                  >
-                    Forgot password?
-                  </Text>
-                </Pressable>
-              </View>
 
               {(fieldError || error) && (
                 <Text className="text-center text-caption text-danger">
@@ -181,9 +154,9 @@ export default function LoginScreen() {
               )}
 
               <Button
-                label={submitting === 'password' ? 'Signing in…' : 'Log in'}
+                label={submitting === 'password' ? 'Creating…' : 'Continue'}
                 onPress={() => {
-                  void onLogin();
+                  void onRegister();
                 }}
                 loading={submitting === 'password'}
                 disabled={busy}
@@ -203,9 +176,9 @@ export default function LoginScreen() {
 
               {!isConfigured ? (
                 <Text className="text-center text-caption text-warning">
-                  Heads up — Auth0 placeholders are still in{' '}
+                  Social sign-in needs Auth0 domain + client ID in{' '}
                   <Text className="font-mono text-warning">src/config/auth.ts</Text>
-                  . Social sign-in needs your domain + client ID.
+                  .
                 </Text>
               ) : null}
             </View>
@@ -213,9 +186,9 @@ export default function LoginScreen() {
 
           <View className="gap-md">
             <AuthFooterLink
-              prompt="Don't have an account?"
-              actionLabel="Sign up"
-              onPress={() => router.push('/(auth)/signup')}
+              prompt="Already have an account?"
+              actionLabel="Log in"
+              onPress={() => router.replace('/(auth)/login')}
             />
             <Text
               className="text-center uppercase text-text-subtle"

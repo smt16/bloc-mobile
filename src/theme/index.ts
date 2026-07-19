@@ -1,18 +1,17 @@
 /**
- * Bloc design tokens.
+ * Bloc design tokens — dirtbag / 90s skate zine direction.
  *
- * Brand accent is the generic `orange` scale (`orange.main` = 500).
- * Light/dark semantic surfaces live in `palettes.ts` and are applied via
- * `ThemeProvider` (device appearance by default).
- *
- * Prefer NativeWind utilities (`bg-bg`, `text-accent`, `bg-orange-main`) for
- * static styling. Use `useTheme().colors` for dynamic/runtime styles.
+ * Brand accent is traffic-cone `orange`. Surfaces follow newsprint (light)
+ * or asphalt (dark). Prefer NativeWind utilities for static styling;
+ * use `useTheme().colors` for dynamic/runtime styles.
  */
 
 import { darkColors, lightColors, type SemanticColors } from './palettes';
 import { orange } from './orange';
+import { fonts } from './fonts';
 
 export { orange };
+export { fonts };
 export { lightColors, darkColors };
 export type { SemanticColors };
 
@@ -23,16 +22,15 @@ export type { SemanticColors };
 export const colors: SemanticColors = darkColors;
 
 /**
- * Gradient stops used across hero moments + progression surfaces.
- * Brand gradient leans on orange-main → deep → violet.
+ * Gradient stops — no soft lifestyle violet. Hazard tape + asphalt.
  */
 export const gradients = {
-  brand: [orange.main, orange[600], '#8B5CF6'] as const,
-  ember: [orange[400], orange[600]] as const,
-  aurora: ['#38E1D6', '#8B5CF6'] as const,
-  send: ['#3DDC97', '#38E1D6'] as const,
+  brand: [orange.main, orange[600], '#1A0800'] as const,
+  ember: [orange[400], orange.main] as const,
+  aurora: [orange.main, '#C8FF00'] as const,
+  send: ['#3DDC97', '#00C2B8'] as const,
   surface: [darkColors.surface, darkColors.bgElevated] as const,
-  fade: ['rgba(12,10,8,0)', darkColors.bg] as const,
+  fade: ['rgba(10,10,10,0)', darkColors.bg] as const,
 };
 
 /**
@@ -42,41 +40,42 @@ export const gradeColors: Record<string, string> = {
   VB: '#7AA2FF',
   V0: '#3DDC97',
   V1: '#3DDC97',
-  V2: '#38E1D6',
-  V3: '#F2C94C',
+  V2: '#00C2B8',
+  V3: '#FFCC00',
   V4: orange[400],
   V5: orange.main,
-  V6: '#FF3D5A',
-  V7: '#FF3D77',
-  V8: '#C13DFF',
-  V9: '#8B5CF6',
-  V10: '#6C5CE7',
+  V6: '#FF3B4A',
+  V7: '#FF2D6A',
+  V8: '#C8FF00',
+  V9: '#B8F000',
+  V10: '#9AE600',
 };
 
 export const gradeColor = (grade: string): string =>
   gradeColors[grade.toUpperCase()] ?? orange.main;
 
+/** Hard-offset print shadows — xerox / sticker, not soft glow. */
 export const shadows = {
   card: {
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.35,
-    shadowRadius: 20,
-    elevation: 8,
+    shadowOffset: { width: 3, height: 3 },
+    shadowOpacity: 0.85,
+    shadowRadius: 0,
+    elevation: 4,
   },
   floating: {
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.45,
-    shadowRadius: 28,
-    elevation: 16,
+    shadowOffset: { width: 4, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 8,
   },
   glow: {
-    shadowColor: orange.main,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.5,
-    shadowRadius: 20,
-    elevation: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 3, height: 3 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 6,
   },
 };
 
@@ -91,32 +90,39 @@ export const spacing = {
   '4xl': 72,
 };
 
+/** Sticker corners — almost hard-edged, never soft pill. */
 export const radius = {
-  sm: 8,
-  md: 12,
-  lg: 16,
-  xl: 24,
-  pill: 999,
+  sm: 2,
+  md: 4,
+  lg: 6,
+  xl: 8,
+  pill: 4,
 };
 
 export const typography = {
   display: {
-    fontSize: 40,
-    lineHeight: 44,
-    fontWeight: '700' as const,
-    letterSpacing: -1,
+    fontFamily: fonts.display,
+    fontSize: 48,
+    lineHeight: 48,
+    fontWeight: '400' as const,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase' as const,
   },
   h1: {
-    fontSize: 28,
+    fontFamily: fonts.display,
+    fontSize: 32,
     lineHeight: 34,
-    fontWeight: '700' as const,
-    letterSpacing: -0.5,
+    fontWeight: '400' as const,
+    letterSpacing: 1,
+    textTransform: 'uppercase' as const,
   },
   h2: {
-    fontSize: 22,
-    lineHeight: 28,
-    fontWeight: '600' as const,
-    letterSpacing: -0.3,
+    fontFamily: fonts.display,
+    fontSize: 24,
+    lineHeight: 26,
+    fontWeight: '400' as const,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase' as const,
   },
   body: {
     fontSize: 16,
@@ -126,25 +132,28 @@ export const typography = {
   bodyStrong: {
     fontSize: 16,
     lineHeight: 22,
-    fontWeight: '600' as const,
+    fontWeight: '700' as const,
   },
   caption: {
-    fontSize: 13,
-    lineHeight: 18,
-    fontWeight: '500' as const,
-    letterSpacing: 0.2,
+    fontFamily: fonts.mono,
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '400' as const,
+    letterSpacing: 0.4,
   },
   overline: {
-    fontSize: 11,
+    fontFamily: fonts.monoBold,
+    fontSize: 10,
     lineHeight: 14,
     fontWeight: '700' as const,
-    letterSpacing: 1.4,
+    letterSpacing: 1.8,
     textTransform: 'uppercase' as const,
   },
 };
 
 export const theme = {
   orange,
+  fonts,
   colors,
   spacing,
   radius,

@@ -26,11 +26,8 @@ export const ProgressBar: React.FC<Props> = ({
 
   return (
     <View
-      className="w-full overflow-hidden rounded-pill"
-      style={[
-        { height, borderRadius: height / 2, backgroundColor: trackColor },
-        style,
-      ]}
+      className="w-full overflow-hidden rounded-sm border border-border-strong"
+      style={[{ height, backgroundColor: trackColor }, style]}
     >
       <LinearGradient
         colors={colorsOverride ? [...colorsOverride] : [...gradients.ember]}
@@ -38,8 +35,7 @@ export const ProgressBar: React.FC<Props> = ({
         end={{ x: 1, y: 0 }}
         style={{
           width: `${pct * 100}%`,
-          height,
-          borderRadius: height / 2,
+          height: '100%',
         }}
       />
     </View>

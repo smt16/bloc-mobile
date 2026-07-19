@@ -94,10 +94,10 @@ const createStyles = (colors: SemanticColors) =>
       gap: 6,
       paddingHorizontal: spacing.md,
       paddingVertical: 7,
-      borderRadius: radius.pill,
+      borderRadius: radius.sm,
       backgroundColor: colors.surfaceMuted,
-      borderWidth: 1,
-      borderColor: 'transparent',
+      borderWidth: 2,
+      borderColor: colors.border,
     },
     count: {
       ...typography.caption,

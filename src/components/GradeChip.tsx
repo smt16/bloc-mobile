@@ -33,18 +33,19 @@ export const GradeChip: React.FC<Props> = ({ grade, size = 'md' }) => {
 
 const sizeMap = {
   sm: { px: 8, py: 2, font: 12, radius: radius.sm },
-  md: { px: spacing.md, py: 4, font: 14, radius: radius.pill },
+  md: { px: spacing.md, py: 4, font: 14, radius: radius.sm },
   lg: { px: spacing.lg, py: 8, font: 20, radius: radius.md },
 };
 
 const styles = StyleSheet.create({
   chip: {
     alignSelf: 'flex-start',
-    borderWidth: 1,
+    borderWidth: 2,
   },
   text: {
     ...typography.bodyStrong,
     fontWeight: '800',
-    letterSpacing: 0.3,
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
   },
 });

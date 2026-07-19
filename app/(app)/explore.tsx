@@ -41,8 +41,8 @@ export default function ExploreScreen() {
   return (
     <Screen scroll padded={false} edges={['top']}>
       <View style={styles.header}>
-        <Text style={styles.title}>Explore</Text>
-        <Text style={styles.subtitle}>Routes, gyms & climbers near you.</Text>
+        <Text style={styles.title}>SCOUT</Text>
+        <Text style={styles.subtitle}>Routes, gyms, and dirtbags near you.</Text>
 
         <View style={styles.searchBar}>
           <Icon name="search" size={18} color={colors.textSubtle} />
@@ -66,7 +66,7 @@ export default function ExploreScreen() {
       </ScrollView>
 
       <View style={styles.padded}>
-        <SectionHeader title="Gym spotlight" action="See all" />
+        <SectionHeader title="Where the holds are" action="See all" />
       </View>
       <ScrollView
         horizontal
@@ -221,9 +221,9 @@ const createStyles = (colors: SemanticColors) =>
       alignItems: 'center',
       gap: spacing.sm,
       backgroundColor: colors.surface,
-      borderWidth: 1,
-      borderColor: colors.border,
-      borderRadius: radius.pill,
+      borderWidth: 2,
+      borderColor: colors.borderStrong,
+      borderRadius: radius.sm,
       paddingHorizontal: spacing.lg,
       height: 48,
       marginTop: spacing.md,
