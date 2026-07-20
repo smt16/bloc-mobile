@@ -1,4 +1,4 @@
-# Ensures package-lock.json stays in sync with package.json on every PR.
+# Ensures pnpm-lock.yaml stays in sync with package.json on every PR.
 
 name: Lockfile
 
@@ -9,7 +9,7 @@ on:
       - master
     paths:
       - package.json
-      - package-lock.json
+      - pnpm-lock.yaml
   workflow_dispatch:
 
 permissions:
@@ -24,20 +24,24 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
-          cache: npm
-          cache-dependency-path: package-lock.json
+          cache: pnpm
 
       - name: Install from lockfile
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Detect lockfile drift
         run: |
-          npm install --package-lock-only --ignore-scripts
-          if ! git diff --exit-code -- package-lock.json; then
-            echo "::error::package-lock.json is out of sync with package.json. Run 'npm install' locally and commit the updated lockfile."
+          pnpm install --lockfile-only --ignore-scripts
+          if ! git diff --exit-code -- pnpm-lock.yaml; then
+            echo "::error::pnpm-lock.yaml is out of sync with package.json. Run 'pnpm install' locally and commit the updated lockfile."
             exit 1
           fi
